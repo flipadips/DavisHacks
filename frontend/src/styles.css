@@ -18,6 +18,7 @@ body {
 
 button,
 input,
+select,
 textarea {
   font: inherit;
 }
@@ -65,6 +66,8 @@ h1 {
 }
 
 .command-form input,
+.intake-form input,
+.intake-form select,
 .claude-form textarea {
   min-width: 0;
   border: 1px solid #c8d1db;
@@ -74,6 +77,7 @@ h1 {
 }
 
 .command-form button,
+.intake-form button,
 .claude-form button {
   border: 0;
   border-radius: 6px;
@@ -84,6 +88,7 @@ h1 {
 }
 
 .command-form button:hover,
+.intake-form button:hover,
 .claude-form button:hover {
   background: #12566d;
 }
@@ -132,6 +137,62 @@ h1 {
 
 .command-list {
   margin-top: 28px;
+}
+
+.intake-panel {
+  margin-top: 28px;
+}
+
+.intake-panel h2 {
+  margin-bottom: 0;
+  font-size: 1.6rem;
+}
+
+.intake-form {
+  display: grid;
+  grid-template-columns: minmax(140px, 220px) 1fr auto;
+  align-items: end;
+  gap: 14px;
+}
+
+.intake-form label {
+  display: grid;
+  gap: 8px;
+  color: #53616f;
+  font-size: 0.9rem;
+  font-weight: 700;
+}
+
+.intake-form button {
+  min-height: 50px;
+}
+
+.form-error {
+  grid-column: 1 / -1;
+  margin: -4px 0 0;
+  color: #b3261e;
+  font-weight: 700;
+}
+
+.intake-summary {
+  display: grid;
+  gap: 8px;
+  padding: 16px 18px;
+  border: 1px solid #d9e0e8;
+  border-radius: 8px;
+  background: #f8fafc;
+}
+
+.intake-summary span {
+  color: #53616f;
+  font-size: 0.85rem;
+  font-weight: 700;
+  text-transform: uppercase;
+}
+
+.intake-summary strong {
+  color: #17202a;
+  line-height: 1.4;
 }
 
 .claude-panel {
@@ -234,6 +295,10 @@ h1 {
   }
 
   .command-form {
+    grid-template-columns: 1fr;
+  }
+
+  .intake-form {
     grid-template-columns: 1fr;
   }
 
