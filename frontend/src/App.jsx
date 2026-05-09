@@ -1,4 +1,5 @@
-import { useEffect, useState } from "react";
+import React, { useEffect, useState } from "react";
+import ApiHealthCard from "./ApiHealthCard.jsx";
 
 const apiUrl = import.meta.env.VITE_API_URL || "http://localhost:3000";
 
@@ -64,6 +65,8 @@ export default function App() {
           <strong>{status}</strong>
         </div>
       </section>
+
+      <ApiHealthCard />
 
       <section className="command-list" aria-label="Recent commands">
         <h2>Recent Commands</h2>
