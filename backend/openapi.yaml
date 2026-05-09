@@ -13,6 +13,8 @@ tags:
     description: Command records stored in PostgreSQL
   - name: Claude
     description: Claude AI prompt and response endpoints
+  - name: Gemini
+    description: Google Gemini creative endpoints (Atlas mentor, Paper Prism, Genesis Forge)
 paths:
   /api/health:
     get:
@@ -106,6 +108,102 @@ paths:
                 $ref: "#/components/schemas/ErrorResponse"
               example:
                 error: Missing ANTHROPIC_API_KEY. Add your Claude API key to backend/.env.
+  /api/gemini/atlas:
+    post:
+      tags:
+        - Gemini
+      summary: Atlas Mentor — personalized advice with semantic weather
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AtlasRequest"
+      responses:
+        "200":
+          description: Atlas reply (structured prose sections)
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AtlasResponse"
+        "400":
+          description: Missing message or oversized payload
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "500":
+          description: Missing Gemini API key or server error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+              example:
+                error: Missing GEMINI_API_KEY. Add your Gemini API key to backend/.env.
+  /api/gemini/paper-prism:
+    post:
+      tags:
+        - Gemini
+      summary: Paper Prism — structured paper synthesis with cross-domain bridge
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/PaperPrismRequest"
+      responses:
+        "200":
+          description: Structured prism analysis
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PaperPrismResponse"
+        "400":
+          description: Missing paper text or oversized payload
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "500":
+          description: Missing Gemini API key or server error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+              example:
+                error: Missing GEMINI_API_KEY. Add your Gemini API key to backend/.env.
+  /api/gemini/forge:
+    post:
+      tags:
+        - Gemini
+      summary: Genesis Forge — linked multi-modal creative outputs from one brief
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ForgeRequest"
+      responses:
+        "200":
+          description: Linked creative bundle
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ForgeResponse"
+        "400":
+          description: Missing brief or oversized payload
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "500":
+          description: Missing Gemini API key or server error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+              example:
+                error: Missing GEMINI_API_KEY. Add your Gemini API key to backend/.env.
 components:
   schemas:
     HealthResponse:
@@ -179,3 +277,117 @@ components:
         error:
           type: string
           example: Something went wrong on the server.
+    AtlasRequest:
+      type: object
+      required:
+        - message
+      properties:
+        displayName:
+          type: string
+          example: Quinn
+        coreSignal:
+          type: string
+          description: Short note about values, constraints, or goals used to personalize tone.
+        message:
+          type: string
+          minLength: 1
+        history:
+          type: array
+          description: Recent turns for continuity (client-managed).
+          items:
+            type: object
+            required:
+              - role
+              - text
+            properties:
+              role:
+                type: string
+                enum:
+                  - user
+                  - model
+              text:
+                type: string
+    AtlasResponse:
+      type: object
+      required:
+        - answer
+      properties:
+        answer:
+          type: string
+    PaperPrismRequest:
+      type: object
+      required:
+        - paperText
+      properties:
+        paperText:
+          type: string
+          minLength: 1
+        focusArea:
+          type: string
+          description: Optional lens (methods, ethics, limitations, etc.).
+    PaperPrismResponse:
+      type: object
+      required:
+        - elevatorPitch
+        - methodologyInFiveBullets
+        - crossDomainBridge
+        - skepticLens
+        - methodAsPseudocode
+        - listeningScore
+      properties:
+        elevatorPitch:
+          type: string
+        methodologyInFiveBullets:
+          type: array
+          items:
+            type: string
+        crossDomainBridge:
+          type: string
+        skepticLens:
+          type: string
+        methodAsPseudocode:
+          type: string
+        listeningScore:
+          type: string
+    ForgeRequest:
+      type: object
+      required:
+        - brief
+      properties:
+        brief:
+          type: string
+          minLength: 1
+        modalities:
+          type: array
+          description: >-
+            Subset of python, dialogue, chords, ascii, shell. Empty means the model picks two surprises.
+          items:
+            type: string
+            enum:
+              - python
+              - dialogue
+              - chords
+              - ascii
+              - shell
+    ForgeResponse:
+      type: object
+      required:
+        - motif
+        - pythonUtility
+        - dialogueBeat
+        - chordRoadmap
+        - asciiArtifact
+        - shellMicroscript
+      properties:
+        motif:
+          type: string
+        pythonUtility:
+          type: string
+        dialogueBeat:
+          type: string
+        chordRoadmap:
+          type: string
+        asciiArtifact:
+          type: string
+        shellMicroscript:
+          type: string

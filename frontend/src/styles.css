@@ -527,6 +527,267 @@ h1 {
   color: #53616f;
 }
 
+.gemini-shell {
+  margin-top: 28px;
+  border-color: #d4c8e8;
+  box-shadow: 0 18px 50px rgb(76 56 120 / 10%);
+}
+
+.gemini-eyebrow {
+  color: #5c4d7d;
+}
+
+.gemini-lede {
+  margin-bottom: 0;
+  color: #4a5563;
+  line-height: 1.55;
+  max-width: 62ch;
+}
+
+.gemini-tabs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.gemini-tab {
+  border: 1px solid #d9e0e8;
+  border-radius: 999px;
+  padding: 10px 16px;
+  background: #f8fafc;
+  cursor: pointer;
+  font-weight: 700;
+  color: #53616f;
+}
+
+.gemini-tab--active {
+  border-color: #5c4d7d;
+  background: #efe9fb;
+  color: #2f2542;
+}
+
+.gemini-form {
+  display: grid;
+  gap: 14px;
+}
+
+.gemini-label {
+  display: grid;
+  gap: 8px;
+  font-weight: 700;
+  color: #384152;
+}
+
+.gemini-label input,
+.gemini-label textarea {
+  min-width: 0;
+  border: 1px solid #c8d1db;
+  border-radius: 6px;
+  padding: 12px 14px;
+  background: #f8fafc;
+  font-weight: 500;
+}
+
+.gemini-label textarea {
+  resize: vertical;
+}
+
+.gemini-actions {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  flex-wrap: wrap;
+}
+
+.gemini-actions button {
+  border: 0;
+  border-radius: 6px;
+  padding: 12px 22px;
+  color: #ffffff;
+  background: #5c4d7d;
+  cursor: pointer;
+  font-weight: 700;
+}
+
+.gemini-actions button:hover {
+  background: #4a3d66;
+}
+
+.gemini-status {
+  color: #53616f;
+  font-size: 0.9rem;
+}
+
+.gemini-transcript ul {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: grid;
+  gap: 12px;
+}
+
+.gemini-turn {
+  border: 1px solid #e6e0f4;
+  border-radius: 8px;
+  padding: 12px 14px;
+  background: #faf8ff;
+}
+
+.gemini-turn--user {
+  background: #f3f6fb;
+  border-color: #d9e0e8;
+}
+
+.gemini-turn__role {
+  display: block;
+  font-size: 0.75rem;
+  font-weight: 800;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: #5c4d7d;
+  margin-bottom: 6px;
+}
+
+.gemini-turn__text {
+  white-space: pre-wrap;
+  line-height: 1.55;
+  color: #17202a;
+}
+
+.prism-grid {
+  display: grid;
+  gap: 14px;
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  margin-top: 8px;
+}
+
+.prism-card {
+  border: 1px solid #e6e0f4;
+  border-radius: 8px;
+  padding: 14px 16px;
+  background: #ffffff;
+}
+
+.prism-card--wide {
+  grid-column: 1 / -1;
+}
+
+.prism-card h3,
+.forge-block h3 {
+  margin: 0 0 10px;
+  font-size: 0.95rem;
+  color: #5c4d7d;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+}
+
+.prism-card p,
+.prism-card li {
+  margin: 0;
+  line-height: 1.55;
+  color: #2d3748;
+}
+
+.prism-card ol {
+  margin: 0;
+  padding-left: 18px;
+}
+
+.prism-card--code pre {
+  margin: 0;
+  white-space: pre-wrap;
+  font-size: 0.85rem;
+  line-height: 1.45;
+  color: #1a202c;
+}
+
+.forge-fieldset {
+  border: 1px dashed #cfc4e6;
+  border-radius: 8px;
+  padding: 12px 14px 8px;
+}
+
+.forge-fieldset legend {
+  padding: 0 6px;
+  font-weight: 800;
+  color: #4a3d66;
+}
+
+.forge-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.forge-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 10px;
+  border-radius: 999px;
+  border: 1px solid #dcd3ef;
+  background: #faf8ff;
+  font-weight: 600;
+  color: #3b2f55;
+}
+
+.forge-hint {
+  margin: 10px 0 4px;
+  color: #64748b;
+  font-size: 0.88rem;
+  line-height: 1.45;
+}
+
+.forge-bundle {
+  margin-top: 10px;
+  border-top: 1px solid #ece6fb;
+  padding-top: 16px;
+}
+
+.forge-motif {
+  margin: 0 0 14px;
+  padding: 12px 14px;
+  border-radius: 8px;
+  background: linear-gradient(120deg, #f6f0ff, #eef6ff);
+  border: 1px solid #e3d9fb;
+  color: #2f2542;
+  line-height: 1.5;
+}
+
+.forge-motif span {
+  display: block;
+  font-size: 0.72rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: #6b5a95;
+  margin-bottom: 6px;
+}
+
+.forge-columns {
+  display: grid;
+  gap: 14px;
+}
+
+.forge-block {
+  border: 1px solid #e6e0f4;
+  border-radius: 8px;
+  padding: 14px 16px;
+  background: #ffffff;
+}
+
+.forge-prose {
+  margin: 0;
+  white-space: pre-wrap;
+  line-height: 1.55;
+}
+
+.forge-block pre {
+  margin: 0;
+  white-space: pre-wrap;
+  font-size: 0.88rem;
+  line-height: 1.45;
+}
+
 @media (max-width: 640px) {
   .app-shell {
     width: min(100% - 24px, 960px);

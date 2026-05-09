@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from "react";
 import ApiHealthCard from "./ApiHealthCard.jsx";
 import GlobeIntro from "./GlobeIntro.jsx";
+import GeminiNexus from "./GeminiNexus.jsx";
 
 const apiUrl = import.meta.env.VITE_API_URL || "http://localhost:3000";
 const careTypes = [
@@ -203,6 +204,8 @@ export default function App() {
           )}
         </div>
       </section>
+
+      <GeminiNexus />
 
       <section className="panel claude-panel">
         <div>

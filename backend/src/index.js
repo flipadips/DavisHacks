@@ -6,6 +6,7 @@ import swaggerUi from "swagger-ui-express";
 import YAML from "yamljs";
 import { fileURLToPath } from "url";
 import { initDb, pool } from "./db.js";
+import geminiRouter from "./geminiRouter.js";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -16,6 +17,7 @@ const openApiDocument = YAML.load(openApiPath);
 
 app.use(cors({ origin: process.env.CLIENT_ORIGIN || "http://localhost:5173" }));
 app.use(express.json());
+app.use("/api/gemini", geminiRouter);
 app.use("/api-docs", swaggerUi.serve, swaggerUi.setup(openApiDocument));
 
 app.get("/openapi.yaml", (_req, res) => {
@@ -111,7 +113,10 @@ app.post("/api/commands", async (req, res, next) => {
 
 app.use((error, _req, res, _next) => {
   console.error(error);
-  res.status(500).json({ error: "Something went wrong on the server." });
+  const status = typeof error.status === "number" ? error.status : 500;
+  const message =
+    status === 500 ? "Something went wrong on the server." : error.message || "Request failed.";
+  res.status(status).json({ error: message });
 });
 
 initDb()
