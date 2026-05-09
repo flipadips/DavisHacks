@@ -118,6 +118,8 @@ export default function MapView({
           type="search"
           placeholder="Search for a place"
           aria-label="Search for a place"
+          autoComplete="off"
+          spellCheck="false"
           disabled={isSearching}
         />
         <button type="submit" disabled={isSearching}>

@@ -337,6 +337,8 @@ h1 {
 .map-pin-list {
   display: grid;
   gap: 8px;
+  max-height: 180px;
+  overflow-y: auto;
   padding: 0;
   margin: 0;
   list-style: none;
