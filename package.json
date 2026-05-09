@@ -1,0 +1,22 @@
+{
+  "name": "nerp-starter",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Basic NERP stack: Node.js, Express, React, and PostgreSQL.",
+  "scripts": {
+    "dev": "concurrently \"npm run dev --workspace backend\" \"npm run dev --workspace frontend\"",
+    "dev:backend": "npm run dev --workspace backend",
+    "dev:frontend": "npm run dev --workspace frontend",
+    "build": "npm run build --workspace frontend",
+    "start": "npm run start --workspace backend",
+    "db:up": "docker compose up -d db",
+    "db:down": "docker compose down"
+  },
+  "workspaces": [
+    "frontend",
+    "backend"
+  ],
+  "devDependencies": {
+    "concurrently": "^9.1.2"
+  }
+}

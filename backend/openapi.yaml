@@ -1,0 +1,122 @@
+openapi: 3.0.3
+info:
+  title: NERP API
+  version: 1.0.0
+  description: API for sending commands from the React frontend to the Express backend.
+servers:
+  - url: http://localhost:3000
+    description: Local development server
+tags:
+  - name: Health
+    description: Server status checks
+  - name: Commands
+    description: Command records stored in PostgreSQL
+paths:
+  /api/health:
+    get:
+      tags:
+        - Health
+      summary: Check API health
+      responses:
+        "200":
+          description: API is running
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/HealthResponse"
+              example:
+                status: ok
+                service: nerp-api
+  /api/commands:
+    get:
+      tags:
+        - Commands
+      summary: List recent commands
+      responses:
+        "200":
+          description: Recent commands
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Command"
+    post:
+      tags:
+        - Commands
+      summary: Send a command
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateCommandRequest"
+            example:
+              command: restart-worker
+      responses:
+        "201":
+          description: Command created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Command"
+        "400":
+          description: Missing command value
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+              example:
+                error: Command is required.
+components:
+  schemas:
+    HealthResponse:
+      type: object
+      required:
+        - status
+        - service
+      properties:
+        status:
+          type: string
+          example: ok
+        service:
+          type: string
+          example: nerp-api
+    CreateCommandRequest:
+      type: object
+      required:
+        - command
+      properties:
+        command:
+          type: string
+          minLength: 1
+          example: restart-worker
+    Command:
+      type: object
+      required:
+        - id
+        - command
+        - status
+        - created_at
+      properties:
+        id:
+          type: integer
+          example: 1
+        command:
+          type: string
+          example: restart-worker
+        status:
+          type: string
+          example: sent
+        created_at:
+          type: string
+          format: date-time
+          example: "2026-05-09T17:00:00.000Z"
+    ErrorResponse:
+      type: object
+      required:
+        - error
+      properties:
+        error:
+          type: string
+          example: Something went wrong on the server.
