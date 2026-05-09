@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from "react";
 import ApiHealthCard from "./ApiHealthCard.jsx";
+import GlobeIntro from "./GlobeIntro.jsx";
 
 const apiUrl = import.meta.env.VITE_API_URL || "http://localhost:3000";
 const careTypes = [
@@ -128,6 +129,8 @@ export default function App() {
 
   return (
     <main className="app-shell">
+      <GlobeIntro />
+
       <section className="panel">
         <div>
           <p className="eyebrow">Node + Express + React + PostgreSQL</p>
