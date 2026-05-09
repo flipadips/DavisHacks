@@ -7,6 +7,10 @@ export default function App() {
   const [command, setCommand] = useState("");
   const [commands, setCommands] = useState([]);
   const [status, setStatus] = useState("Loading commands...");
+  const [question, setQuestion] = useState("");
+  const [claudeAnswer, setClaudeAnswer] = useState("");
+  const [claudeStatus, setClaudeStatus] = useState("Ready");
+  const [claudeModel, setClaudeModel] = useState("");
 
   async function loadCommands() {
     const response = await fetch(`${apiUrl}/api/commands`);
@@ -38,6 +42,36 @@ export default function App() {
     await loadCommands();
   }
 
+  async function askClaude(event) {
+    event.preventDefault();
+
+    const trimmedQuestion = question.trim();
+    if (!trimmedQuestion) return;
+
+    setClaudeStatus("Asking Claude...");
+    setClaudeAnswer("");
+    setClaudeModel("");
+
+    const response = await fetch(`${apiUrl}/api/claude`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ question: trimmedQuestion })
+    });
+
+    const data = await response.json();
+
+    if (!response.ok) {
+      setClaudeStatus(data.error || "Claude request failed");
+      setClaudeAnswer(data.error || "Claude request failed");
+      setClaudeModel("");
+      return;
+    }
+
+    setClaudeAnswer(data.answer || "Claude returned no text response.");
+    setClaudeStatus("Answered");
+    setClaudeModel(data.model || "");
+  }
+
   useEffect(() => {
     loadCommands().catch(() => setStatus("API or database is not running"));
   }, []);
@@ -67,6 +101,38 @@ export default function App() {
       </section>
 
       <ApiHealthCard />
+
+      <section className="panel claude-panel">
+        <div>
+          <p className="eyebrow">Claude AI</p>
+          <h2>Ask Claude</h2>
+        </div>
+
+        <form className="claude-form" onSubmit={askClaude}>
+          <textarea
+            value={question}
+            onChange={(event) => setQuestion(event.target.value)}
+            placeholder="Ask Claude a question"
+            aria-label="Question for Claude"
+          />
+          <button type="submit">Ask</button>
+        </form>
+
+        <div className="status-row">
+          <span>Claude Status</span>
+          <strong>{claudeStatus}</strong>
+        </div>
+
+        <section className="claude-response-box" aria-label="Claude response">
+          <div className="claude-response-header">
+            <span>Claude Response</span>
+            {claudeModel && <small>Model: {claudeModel}</small>}
+          </div>
+          <div className="claude-answer">
+            {claudeAnswer || "Claude's response will appear here after you ask a question."}
+          </div>
+        </section>
+      </section>
 
       <section className="command-list" aria-label="Recent commands">
         <h2>Recent Commands</h2>

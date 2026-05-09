@@ -11,6 +11,8 @@ tags:
     description: Server status checks
   - name: Commands
     description: Command records stored in PostgreSQL
+  - name: Claude
+    description: Claude AI prompt and response endpoints
 paths:
   /api/health:
     get:
@@ -68,6 +70,42 @@ paths:
                 $ref: "#/components/schemas/ErrorResponse"
               example:
                 error: Command is required.
+  /api/claude:
+    post:
+      tags:
+        - Claude
+      summary: Ask Claude a question
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ClaudeRequest"
+            example:
+              question: What is the NERP stack?
+      responses:
+        "200":
+          description: Claude response
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ClaudeResponse"
+        "400":
+          description: Missing question value
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+              example:
+                error: Question is required.
+        "500":
+          description: Missing API key or server error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+              example:
+                error: Missing ANTHROPIC_API_KEY. Add your Claude API key to backend/.env.
 components:
   schemas:
     HealthResponse:
@@ -112,6 +150,27 @@ components:
           type: string
           format: date-time
           example: "2026-05-09T17:00:00.000Z"
+    ClaudeRequest:
+      type: object
+      required:
+        - question
+      properties:
+        question:
+          type: string
+          minLength: 1
+          example: What is the NERP stack?
+    ClaudeResponse:
+      type: object
+      required:
+        - answer
+        - model
+      properties:
+        answer:
+          type: string
+          example: NERP is a Node, Express, React, and PostgreSQL stack.
+        model:
+          type: string
+          example: claude-sonnet-4-20250514
     ErrorResponse:
       type: object
       required:
