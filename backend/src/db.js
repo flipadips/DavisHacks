@@ -15,4 +15,22 @@ export async function initDb() {
       created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
     );
   `);
+
+  await pool.query(`
+    CREATE TABLE IF NOT EXISTS users (
+      id SERIAL PRIMARY KEY,
+      username TEXT NOT NULL UNIQUE,
+      password TEXT NOT NULL,
+      created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+    );
+  `);
+
+  await pool.query(
+    `
+    INSERT INTO users (username, password)
+    VALUES ($1, $2)
+    ON CONFLICT (username) DO NOTHING;
+    `,
+    ["mockuser", "mockpassword"]
+  );
 }

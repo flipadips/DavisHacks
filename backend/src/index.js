@@ -56,6 +56,30 @@ app.get("/api/provider-search", async (req, res, next) => {
   }
 });
 
+app.post("/api/users/validate", async (req, res, next) => {
+  try {
+    const username = String(req.body.username || "").trim();
+    const password = String(req.body.password || "");
+
+    if (!username || !password) {
+      return res.status(400).json({ error: "Username and password are required." });
+    }
+
+    const result = await pool.query(
+      "SELECT id, username FROM users WHERE username = $1 AND password = $2 LIMIT 1",
+      [username, password]
+    );
+    const user = result.rows[0];
+
+    res.json({
+      valid: Boolean(user),
+      user: user || null
+    });
+  } catch (error) {
+    next(error);
+  }
+});
+
 app.post("/api/claude", async (req, res, next) => {
   try {
     const question = String(req.body.question || "").trim();

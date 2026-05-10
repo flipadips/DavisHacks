@@ -11,6 +11,8 @@ tags:
     description: Server status checks
   - name: Commands
     description: Command records stored in PostgreSQL
+  - name: Users
+    description: Mock username and password validation
   - name: Claude
     description: Claude AI prompt and response endpoints
   - name: Gemini
@@ -74,6 +76,47 @@ paths:
                 $ref: "#/components/schemas/ErrorResponse"
               example:
                 error: Command is required.
+  /api/users/validate:
+    post:
+      tags:
+        - Users
+      summary: Check whether a username and password match a stored user
+      description: Validates submitted credentials against the mock users table. This does not create a session or token.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ValidateUserRequest"
+            example:
+              username: mockuser
+              password: mockpassword
+      responses:
+        "200":
+          description: Credential validation result
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ValidateUserResponse"
+              examples:
+                valid:
+                  value:
+                    valid: true
+                    user:
+                      id: 1
+                      username: mockuser
+                invalid:
+                  value:
+                    valid: false
+                    user: null
+        "400":
+          description: Missing username or password
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+              example:
+                error: Username and password are required.
   /api/claude:
     post:
       tags:
@@ -250,6 +293,45 @@ components:
           type: string
           format: date-time
           example: "2026-05-09T17:00:00.000Z"
+    ValidateUserRequest:
+      type: object
+      required:
+        - username
+        - password
+      properties:
+        username:
+          type: string
+          minLength: 1
+          example: mockuser
+        password:
+          type: string
+          minLength: 1
+          example: mockpassword
+    ValidatedUser:
+      type: object
+      required:
+        - id
+        - username
+      properties:
+        id:
+          type: integer
+          example: 1
+        username:
+          type: string
+          example: mockuser
+    ValidateUserResponse:
+      type: object
+      required:
+        - valid
+        - user
+      properties:
+        valid:
+          type: boolean
+          example: true
+        user:
+          nullable: true
+          allOf:
+            - $ref: "#/components/schemas/ValidatedUser"
     ClaudeRequest:
       type: object
       required:
