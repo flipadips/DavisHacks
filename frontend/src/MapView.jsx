@@ -18,6 +18,13 @@ const appointmentDates = [
   { id: "thu-14", day: "Thu", date: "14", fullDay: "Thursday", reviewLabel: "Thursday, May 14 2026" },
   { id: "fri-15", day: "Fri", date: "15", fullDay: "Friday", reviewLabel: "Friday, May 15 2026" }
 ];
+const distanceOptions = [
+  { label: "All distances", value: "All" },
+  { label: "Within 5 miles", value: 5 },
+  { label: "Within 10 miles", value: 10 },
+  { label: "Within 25 miles", value: 25 },
+  { label: "Within 50 miles", value: 50 }
+];
 
 export default function MapView({
   center = defaultCenter,
@@ -41,7 +48,9 @@ export default function MapView({
   const [isMapReady, setIsMapReady] = useState(false);
   const [sheetMode, setSheetMode] = useState("half");
   const [isInsuranceSheetOpen, setIsInsuranceSheetOpen] = useState(false);
+  const [isDistanceSheetOpen, setIsDistanceSheetOpen] = useState(false);
   const [insuranceFilter, setInsuranceFilter] = useState("All");
+  const [distanceFilter, setDistanceFilter] = useState("All");
   const [acceptingOnly, setAcceptingOnly] = useState(false);
   const [bookingProvider, setBookingProvider] = useState(null);
   const [bookingStep, setBookingStep] = useState("detail");
@@ -51,8 +60,8 @@ export default function MapView({
   const providerPins = useMemo(() => externalPins.map(normalizeExternalPin).filter(Boolean), [externalPins]);
   const allPins = useMemo(() => [...providerPins, ...pins], [providerPins, pins]);
   const filteredPins = useMemo(
-    () => filterPins(allPins, { acceptingOnly, insuranceFilter }),
-    [allPins, acceptingOnly, insuranceFilter]
+    () => filterPins(allPins, { acceptingOnly, insuranceFilter, distanceFilter }),
+    [allPins, acceptingOnly, insuranceFilter, distanceFilter]
   );
   const insuranceOptions = useMemo(
     () => ["All", ...uniqueSorted(allPins.flatMap((pin) => pin.insurance || []))],
@@ -287,7 +296,13 @@ export default function MapView({
             >
               {insuranceFilter === "All" ? "all insurances" : insuranceFilter}
             </button>
-            <button type="button" className="map-filter-row__select">distance</button>
+            <button
+              type="button"
+              className={distanceFilter === "All" ? "map-filter-row__select" : "map-filter-row__select map-filter-row__active"}
+              onClick={() => setIsDistanceSheetOpen(true)}
+            >
+              {formatDistanceFilter(distanceFilter)}
+            </button>
           </div>
 
           {sourceUrl && (
@@ -378,6 +393,47 @@ export default function MapView({
               >
                 <span>{option}</span>
                 {option === insuranceFilter && <span aria-hidden="true">✓</span>}
+              </button>
+            ))}
+          </div>
+        </section>
+      </div>
+
+      <div
+        className={
+          isDistanceSheetOpen
+            ? "map-filter-modal map-filter-modal--open"
+            : "map-filter-modal"
+        }
+        aria-hidden={!isDistanceSheetOpen}
+      >
+        <button
+          className="map-filter-modal__scrim"
+          type="button"
+          aria-label="Close distance filter"
+          onClick={() => setIsDistanceSheetOpen(false)}
+        />
+        <section className="map-filter-modal__sheet" aria-label="Filter by distance">
+          <div className="map-filter-modal__header">
+            <h3>Distance</h3>
+            <button type="button" aria-label="Close" onClick={() => setIsDistanceSheetOpen(false)}>
+              <span aria-hidden="true">×</span>
+            </button>
+          </div>
+
+          <div className="map-filter-modal__options">
+            {distanceOptions.map((option) => (
+              <button
+                key={option.value}
+                type="button"
+                className={option.value === distanceFilter ? "map-filter-modal__option map-filter-modal__option--selected" : "map-filter-modal__option"}
+                onClick={() => {
+                  setDistanceFilter(option.value);
+                  setIsDistanceSheetOpen(false);
+                }}
+              >
+                <span>{option.label}</span>
+                {option.value === distanceFilter && <span aria-hidden="true">✓</span>}
               </button>
             ))}
           </div>
@@ -613,7 +669,7 @@ function compactCareType(value) {
   return value;
 }
 
-function filterPins(pins, { acceptingOnly, insuranceFilter }) {
+function filterPins(pins, { acceptingOnly, insuranceFilter, distanceFilter }) {
   return pins.filter((pin) => {
     if (acceptingOnly && !pin.acceptingPatients) {
       return false;
@@ -621,6 +677,14 @@ function filterPins(pins, { acceptingOnly, insuranceFilter }) {
 
     if (insuranceFilter !== "All" && !pin.insurance?.includes(insuranceFilter)) {
       return false;
+    }
+
+    if (distanceFilter !== "All") {
+      const distance = Number(pin.distanceMiles);
+
+      if (!Number.isFinite(distance) || distance > distanceFilter) {
+        return false;
+      }
     }
 
     return true;
@@ -639,6 +703,10 @@ function formatRating(value) {
 function formatDistance(value) {
   const distance = Number(value);
   return Number.isFinite(distance) ? `${distance.toFixed(1)} miles` : "nearby";
+}
+
+function formatDistanceFilter(value) {
+  return value === "All" ? "distance" : `within ${value} mi`;
 }
 
 function titleCaseLower(value) {

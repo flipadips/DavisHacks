@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useRef, useState } from "react";
 import GlobeVisual from "./GlobeVisual.jsx";
 import MapView from "../MapView.jsx";
 import { careTypes } from "../constants/careTypes.js";
@@ -14,10 +14,12 @@ export default function MobileOnboarding({
   onBack,
   onSkip,
   onSubmitCare,
+  onSubmitLocationSearch,
   careIntakeProps,
   providerPins = []
 }) {
   const [expandedCareType, setExpandedCareType] = useState("");
+  const mapSearchInputRef = useRef(null);
   const isSplashStep = step === 0;
   const isCareTypeStep = step === 2;
   const isMapStep = step === 3;
@@ -27,18 +29,27 @@ export default function MobileOnboarding({
   if (isMapStep) {
     return (
       <main className="mobile-onboarding mobile-onboarding--map">
-        <header className="mobile-onboarding__map-searchbar">
+        <form className="mobile-onboarding__map-searchbar" onSubmit={onSubmitLocationSearch}>
           <span className="mobile-onboarding__map-searchbar-icon" aria-hidden="true" />
-          <span>{location || "Search"}</span>
+          <input
+            ref={mapSearchInputRef}
+            value={location}
+            onChange={(event) => onLocationChange(event.target.value)}
+            placeholder="Zipcode"
+            aria-label="Search by ZIP code"
+          />
           <button
             className="mobile-onboarding__map-searchbar-close"
             type="button"
             aria-label="Clear search"
-            onClick={() => onLocationChange("")}
+            onClick={() => {
+              onLocationChange("");
+              requestAnimationFrame(() => mapSearchInputRef.current?.focus());
+            }}
           >
             <span aria-hidden="true" />
           </button>
-        </header>
+        </form>
 
         <section className="mobile-onboarding__map-stage">
           <MapView

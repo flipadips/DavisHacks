@@ -44,6 +44,13 @@ export default function App() {
             onboarding.showMapStep();
           }
         }}
+        onSubmitLocationSearch={async (event) => {
+          event.preventDefault();
+          await intakeState.saveIntakeValues({
+            zipCode: onboarding.location,
+            careTypes: onboarding.careTypes
+          });
+        }}
         careIntakeProps={{
           zipCode: intakeState.zipCode,
           careType: intakeState.careType,
