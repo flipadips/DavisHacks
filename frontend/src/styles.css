@@ -13,6 +13,7 @@
 :root {
   --font-body: "Manrope", ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
   --font-bold: "Aeonik", "Manrope", ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  --vouch-purple: #665bdc;
 
   color: #17202a;
   background: #eef2f6;
@@ -189,11 +190,11 @@ h1 {
   display: block;
   height: 3px;
   border-radius: 999px;
-  background: #8d8d8f;
+  background: rgb(102 91 220 / 34%);
 }
 
 .mobile-onboarding__progress-segment--active {
-  background: #050505;
+  background: var(--vouch-purple);
 }
 
 .mobile-onboarding__screen {
@@ -263,47 +264,49 @@ h1 {
 .mobile-onboarding__care-screen {
   display: grid;
   align-content: start;
-  gap: 14px;
-  width: min(100% - 46px, 560px);
+  gap: 8px;
+  width: min(100% - 72px, 430px);
   margin: 0 auto;
-  padding: 120px 0 24px;
+  padding: 8px 0 24px;
   text-align: center;
 }
 
 .mobile-onboarding__care-screen h1 {
   margin: 0;
   color: #030303;
-  font-size: clamp(2rem, 8vw, 2.35rem);
+  font-size: clamp(1.35rem, 5.7vw, 1.58rem);
+  font-weight: 900;
   line-height: 1.08;
   letter-spacing: 0;
 }
 
 .mobile-onboarding__care-screen p {
-  max-width: 20ch;
-  margin: 0 auto 22px;
+  max-width: 28ch;
+  margin: 0 auto 12px;
   color: #7d7d81;
-  font-size: 1.45rem;
-  line-height: 1.25;
+  font-size: 1rem;
+  line-height: 1.35;
 }
 
 .mobile-onboarding__care-options {
   display: grid;
-  gap: 8px;
+  gap: 6px;
+  margin-top: 14px;
 }
 
 .mobile-onboarding__care-option {
   display: grid;
   gap: 0;
   align-content: center;
-  min-height: 70px;
+  min-height: 50px;
   border: 2px solid transparent;
-  border-radius: 24px;
-  padding: 18px;
+  border-radius: 14px;
+  padding: 10px 18px;
   color: #030303;
   background: #ffffff;
   box-shadow: 0px 4px 21.6px 0px rgba(136, 150, 200, 0.35);
   cursor: pointer;
-  font-size: clamp(1.08rem, 5vw, 1.85rem);
+  font-size: clamp(1rem, 4vw, 1.2rem);
   line-height: 1.15;
   text-align: center;
   transition:
@@ -316,11 +319,11 @@ h1 {
 .mobile-onboarding__care-option--selected {
   border-color: transparent;
   color: #ffffff;
-  background: #000000;
+  background: var(--vouch-purple);
 }
 
 .mobile-onboarding__care-option[aria-expanded="true"] {
-  min-height: 132px;
+  min-height: 92px;
   transform: translateY(-1px);
 }
 
@@ -329,7 +332,7 @@ h1 {
   max-height: 0;
   overflow: hidden;
   color: rgb(255 255 255 / 78%);
-  font-size: 0.95rem;
+  font-size: 0.82rem;
   line-height: 1.35;
   opacity: 0;
   transition:
@@ -339,8 +342,8 @@ h1 {
 }
 
 .mobile-onboarding__care-option[aria-expanded="true"] .mobile-onboarding__care-option-detail {
-  max-height: 120px;
-  margin-top: 10px;
+  max-height: 88px;
+  margin-top: 7px;
   opacity: 1;
 }
 
@@ -362,13 +365,14 @@ h1 {
   border: 0;
   border-radius: 22px;
   color: #ffffff;
-  background: #000000;
+  background: var(--vouch-purple);
   cursor: pointer;
   font-size: 1.7rem;
   font-weight: 500;
 }
 
 .mobile-onboarding__footer button:disabled {
+  background: #8d8d8f;
   cursor: not-allowed;
   opacity: 0.48;
 }
@@ -1918,6 +1922,12 @@ h1 {
     text-align: left;
   }
 
+  .mobile-onboarding__map-stage .map-filter-modal__option svg {
+    width: 1.25rem;
+    height: 1.25rem;
+    flex: 0 0 auto;
+  }
+
   .mobile-onboarding__map-stage .map-filter-modal__option--selected {
     color: #5b55d6;
   }
@@ -2433,25 +2443,22 @@ h1 {
     }
   }
 
-  .appointment-flow__success span {
-    width: 34px;
-    height: 20px;
-    border-bottom: 7px solid #665bdc;
-    border-left: 7px solid #665bdc;
-    border-radius: 3px;
-    transform: rotate(-45deg) translateY(-2px);
+  .appointment-flow__success svg {
+    width: 46px;
+    height: 46px;
+    color: #665bdc;
     animation: appointment-check-settle 420ms cubic-bezier(0.2, 1.2, 0.36, 1) 360ms both;
   }
 
   @keyframes appointment-check-settle {
     0% {
       opacity: 0;
-      transform: rotate(-45deg) translateY(8px) scale(0.72);
+      transform: translateY(8px) scale(0.72);
     }
 
     100% {
       opacity: 1;
-      transform: rotate(-45deg) translateY(-2px) scale(1);
+      transform: translateY(-2px) scale(1);
     }
   }
 

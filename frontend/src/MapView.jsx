@@ -1,4 +1,5 @@
 import React, { useEffect, useMemo, useRef, useState } from "react";
+import { Check } from "lucide-react";
 import appointmentCalendarIcon from "./assets/appointment-calendar.svg";
 import appointmentInsuranceIcon from "./assets/appointment-insurance.svg";
 import appointmentLanguageIcon from "./assets/appointment-language.svg";
@@ -392,7 +393,7 @@ export default function MapView({
                 }}
               >
                 <span>{option}</span>
-                {option === insuranceFilter && <span aria-hidden="true">✓</span>}
+                {option === insuranceFilter && <Check aria-hidden="true" strokeWidth={2.4} />}
               </button>
             ))}
           </div>
@@ -433,7 +434,7 @@ export default function MapView({
                 }}
               >
                 <span>{option.label}</span>
-                {option.value === distanceFilter && <span aria-hidden="true">✓</span>}
+                {option.value === distanceFilter && <Check aria-hidden="true" strokeWidth={2.4} />}
               </button>
             ))}
           </div>
@@ -520,7 +521,7 @@ function AppointmentFlow({
       <section className="appointment-flow appointment-flow--booked" aria-label="Appointment booked">
         <div key={`${step}-${transitionKey}`} className="appointment-flow__screen appointment-flow__screen--booked">
           <div className="appointment-flow__success" aria-hidden="true">
-            <span />
+            <Check strokeWidth={4.4} />
           </div>
           <div className="appointment-flow__booked-copy">
             <h2>You&apos;re booked!</h2>
@@ -725,7 +726,7 @@ function PickerFilterSheet({ title, isOpen, selectedOption, options, onClose, on
               onClick={() => onSelect(option)}
             >
               <span>{option}</span>
-              {option === selectedOption && <span aria-hidden="true">✓</span>}
+              {option === selectedOption && <Check aria-hidden="true" strokeWidth={2.4} />}
             </button>
           ))}
         </div>

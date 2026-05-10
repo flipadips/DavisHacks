@@ -91,7 +91,7 @@ export default function MobileOnboarding({
 
           <section className="mobile-onboarding__care-screen">
             <h1>what type of care?</h1>
-            <p>No account needed. Get a list from providers near your area.</p>
+            <p>no account needed. get a list from providers near your area.</p>
 
             <div className="mobile-onboarding__care-options" aria-label="Care type">
               {careTypes.map((type) => (
