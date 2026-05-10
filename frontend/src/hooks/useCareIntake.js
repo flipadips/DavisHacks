@@ -20,7 +20,8 @@ export function useCareIntake(apiUrl) {
 
   async function saveIntakeValues(nextValues) {
     const normalizedZip = nextValues.zipCode.trim();
-    const nextCareType = nextValues.careType || careType;
+    const nextCareTypes = normalizeCareTypeValues(nextValues.careTypes || nextValues.careType || careType);
+    const nextCareType = nextCareTypes.join(", ");
 
     if (!/^\d{5}(-\d{4})?$/.test(normalizedZip)) {
       setZipError("Enter a valid 5-digit ZIP code, or ZIP+4.");
@@ -38,31 +39,23 @@ export function useCareIntake(apiUrl) {
     setCareType(nextCareType);
     setIntakeInfo(nextIntakeInfo);
     setZipError("");
-    await loadProviders(nextIntakeInfo);
+    await loadProviders(nextIntakeInfo, nextCareTypes);
     return true;
   }
 
-  async function loadProviders(nextIntakeInfo) {
+  async function loadProviders(nextIntakeInfo, selectedCareTypes = [nextIntakeInfo.careType]) {
     setProviderStatus("Loading providers...");
     setProviderPins([]);
     setProviderSourceUrl("");
 
     try {
-      const params = new URLSearchParams({
-        zip: nextIntakeInfo.zipCode,
-        careType: nextIntakeInfo.careType
-      });
-      const response = await fetch(`${apiUrl}/api/provider-search?${params.toString()}`);
-      const data = await response.json();
+      const results = await Promise.all(selectedCareTypes.map((selectedCareType) => fetchProviders(nextIntakeInfo.zipCode, selectedCareType, apiUrl)));
+      const providers = uniqueProviders(results.flatMap((result) => result.providers || []));
+      const firstSourceUrl = results.find((result) => result.sourceUrl)?.sourceUrl || "";
 
-      if (!response.ok) {
-        setProviderStatus(data.error || "Provider search failed.");
-        return;
-      }
-
-      setProviderPins(normalizeProviderPins(data.providers || []));
-      setProviderSourceUrl(data.sourceUrl || "");
-      setProviderStatus(data.message || "Providers loaded.");
+      setProviderPins(normalizeProviderPins(providers));
+      setProviderSourceUrl(firstSourceUrl);
+      setProviderStatus(providers.length > 0 ? `${providers.length} providers found.` : "No providers found.");
     } catch {
       setProviderStatus("Provider search is unavailable right now.");
     }
@@ -81,6 +74,42 @@ export function useCareIntake(apiUrl) {
     saveIntake,
     saveIntakeValues
   };
+}
+
+async function fetchProviders(zipCode, careType, apiUrl) {
+  const params = new URLSearchParams({
+    zip: zipCode,
+    careType
+  });
+  const response = await fetch(`${apiUrl}/api/provider-search?${params.toString()}`);
+  const data = await response.json();
+
+  if (!response.ok) {
+    throw new Error(data.error || "Provider search failed.");
+  }
+
+  return data;
+}
+
+function normalizeCareTypeValues(value) {
+  if (Array.isArray(value)) {
+    return value.filter(Boolean);
+  }
+
+  return value ? [value] : [];
+}
+
+function uniqueProviders(providers) {
+  const providerMap = new Map();
+
+  providers.forEach((provider) => {
+    const key = provider.id || provider.path || provider.name;
+    if (key && !providerMap.has(key)) {
+      providerMap.set(key, provider);
+    }
+  });
+
+  return [...providerMap.values()];
 }
 
 function normalizeProviderPins(providers) {

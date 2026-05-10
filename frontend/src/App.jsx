@@ -25,9 +25,10 @@ export default function App() {
       <MobileOnboarding
         step={onboarding.step}
         location={onboarding.location}
-        careType={onboarding.careType}
+        selectedCareTypes={onboarding.careTypes}
+        careTypeLabel={onboarding.careTypeLabel}
         onLocationChange={onboarding.setLocation}
-        onCareTypeChange={onboarding.setCareType}
+        onCareTypeToggle={onboarding.toggleCareType}
         onNext={onboarding.handleNext}
         onBack={onboarding.goBack}
         onSkip={onboarding.skip}
@@ -36,7 +37,7 @@ export default function App() {
           event.preventDefault();
           const didSave = await intakeState.saveIntakeValues({
             zipCode: onboarding.location,
-            careType: onboarding.careType
+            careTypes: onboarding.careTypes
           });
 
           if (didSave) {

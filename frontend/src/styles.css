@@ -85,6 +85,13 @@ h1 {
   background: #eef2f6;
 }
 
+.mobile-onboarding--map .mobile-onboarding__topbar {
+  width: min(100% - 24px, 560px);
+  margin: 0 auto;
+  padding-right: 0;
+  padding-left: 0;
+}
+
 .mobile-onboarding__form {
   position: relative;
   z-index: 1;
@@ -259,8 +266,9 @@ h1 {
 }
 
 .mobile-onboarding__care-option--selected {
-  border-color: #176b87;
-  background: #eefaff;
+  border-color: transparent;
+  color: #ffffff;
+  background: #000000;
 }
 
 .mobile-onboarding__footer {
@@ -1315,14 +1323,16 @@ h1 {
     position: fixed;
     inset: 0 0 auto;
     z-index: 700;
-    min-height: 104px;
-    padding: calc(64px + env(safe-area-inset-top)) 0 0 54px;
+    width: auto;
+    margin: 0;
+    min-height: 88px;
+    padding: calc(44px + env(safe-area-inset-top)) 0 0 22px;
     pointer-events: none;
   }
 
   .mobile-onboarding--map .mobile-onboarding__back {
-    width: 48px;
-    height: 48px;
+    width: 52px;
+    height: 52px;
     border-radius: 50%;
     background: #ffffff;
     box-shadow: 0 10px 28px rgb(0 0 0 / 10%);
@@ -1330,9 +1340,9 @@ h1 {
   }
 
   .mobile-onboarding--map .mobile-onboarding__back span {
-    width: 16px;
-    height: 16px;
-    border-width: 2px;
+    width: 19px;
+    height: 19px;
+    border-width: 3px;
   }
 
   .mobile-onboarding--map .mobile-onboarding__skip {
@@ -1381,6 +1391,10 @@ h1 {
   .mobile-onboarding__map-stage .map-canvas {
     height: 100%;
     min-height: 100dvh;
+  }
+
+  .mobile-onboarding__map-stage .map-canvas .leaflet-top {
+    top: calc(104px + env(safe-area-inset-top));
   }
 
   .mobile-onboarding__map-stage .map-results-sheet {
@@ -1462,16 +1476,30 @@ h1 {
   }
 
   .mobile-onboarding__map-stage .map-filter-row button {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
     flex: 0 0 auto;
     min-height: 42px;
     border: 0;
-    border-radius: 12px;
+    border-radius: 13px;
     padding: 0 20px;
     color: #060606;
     background: #f0f0f1;
     cursor: pointer;
     font-size: 1rem;
     white-space: nowrap;
+  }
+
+  .mobile-onboarding__map-stage .map-filter-row__select::after {
+    content: "";
+    width: 7px;
+    height: 7px;
+    margin-top: -3px;
+    border-right: 2px solid currentColor;
+    border-bottom: 2px solid currentColor;
+    transform: rotate(45deg);
   }
 
   .mobile-onboarding__map-stage .map-filter-row button:first-child {
@@ -1490,14 +1518,16 @@ h1 {
   .mobile-onboarding__map-stage .map-pin-list li {
     position: relative;
     display: grid;
-    grid-template-columns: 120px minmax(0, 1fr) 24px;
+    grid-template-columns: clamp(78px, 26vw, 104px) minmax(0, 1fr) 20px;
     align-items: center;
-    gap: 10px;
-    min-height: 138px;
+    gap: 12px;
+    min-width: 0;
+    min-height: 122px;
+    overflow: hidden;
     border: 0;
     border-bottom: 1px solid #ececec;
     border-radius: 0;
-    padding: 20px 0;
+    padding: 16px 0;
     background: #ffffff;
     box-shadow: none;
   }
@@ -1507,16 +1537,22 @@ h1 {
     z-index: 1;
     display: grid;
     place-items: center;
-    width: 120px;
-    height: 120px;
+    width: clamp(78px, 26vw, 104px);
+    height: clamp(78px, 26vw, 104px);
+    min-width: 0;
     overflow: hidden;
     border-radius: 12px;
     background:
       linear-gradient(135deg, rgb(24 45 57 / 82%), rgb(111 82 56 / 74%)),
       linear-gradient(90deg, #74513c 0 26%, #1c3f4f 26% 42%, #e0d0bc 42% 66%, #8a382c 66%);
     color: #ffffff;
-    font-size: 1.6rem;
+    font-size: clamp(1.05rem, 5vw, 1.45rem);
     font-weight: 900;
+  }
+
+  .mobile-onboarding__map-stage .map-provider-card__thumb span {
+    color: #ffffff;
+    overflow-wrap: anywhere;
   }
 
   .mobile-onboarding__map-stage .map-pin-list li:nth-child(2n) .map-provider-card__thumb {
@@ -1554,8 +1590,10 @@ h1 {
   .mobile-onboarding__map-stage .map-provider-card__body b,
   .mobile-onboarding__map-stage .map-provider-card__body em {
     display: block;
+    min-width: 0;
     margin: 0;
     line-height: 1.2;
+    overflow-wrap: anywhere;
   }
 
   .mobile-onboarding__map-stage .map-provider-card__body p {
@@ -1579,7 +1617,7 @@ h1 {
 
   .mobile-onboarding__map-stage .map-provider-card__body em {
     color: #28a348;
-    font-size: 0.98rem;
+    font-size: clamp(0.82rem, 3.7vw, 0.98rem);
     font-style: normal;
   }
 

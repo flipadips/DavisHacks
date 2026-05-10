@@ -12,7 +12,7 @@ export function useMobileOnboarding() {
   const [mobileOnboarding, setMobileOnboarding] = useState(() => readJsonStorage("mobileOnboarding"));
   const [step, setStep] = useState(0);
   const [location, setLocation] = useState(mobileOnboarding?.location || "");
-  const [careType, setCareType] = useState(mobileOnboarding?.careType || "");
+  const [careTypes, setCareTypes] = useState(() => normalizeSavedCareTypes(mobileOnboarding?.careTypes || mobileOnboarding?.careType));
 
   useEffect(() => {
     const mobileMatcher = window.matchMedia(mobileOnboardingQuery);
@@ -41,14 +41,24 @@ export function useMobileOnboarding() {
       return;
     }
 
-    if (!careType) return;
+    if (careTypes.length === 0) return;
     setStep(3);
+  }
+
+  function toggleCareType(careType) {
+    setCareTypes((currentCareTypes) => {
+      if (currentCareTypes.includes(careType)) {
+        return currentCareTypes.filter((type) => type !== careType);
+      }
+
+      return [...currentCareTypes, careType];
+    });
   }
 
   function complete() {
     const nextOnboarding = {
       location: location.trim(),
-      careType,
+      careTypes,
       completed: true
     };
 
@@ -60,12 +70,22 @@ export function useMobileOnboarding() {
     shouldShow: isMobile && !mobileOnboarding?.completed,
     step,
     location,
-    careType,
+    careTypes,
+    primaryCareType: careTypes[0] || "",
+    careTypeLabel: careTypes.join(", "),
     setLocation,
-    setCareType,
+    toggleCareType,
     handleNext,
     showMapStep: () => setStep(3),
     goBack: () => setStep((currentStep) => Math.max(0, currentStep - 1)),
     skip: complete
   };
+}
+
+function normalizeSavedCareTypes(value) {
+  if (Array.isArray(value)) {
+    return value;
+  }
+
+  return value ? [value] : [];
 }

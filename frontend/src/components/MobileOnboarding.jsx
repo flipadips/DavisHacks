@@ -6,9 +6,10 @@ import { careTypes } from "../constants/careTypes.js";
 export default function MobileOnboarding({
   step,
   location,
-  careType,
+  selectedCareTypes,
+  careTypeLabel,
   onLocationChange,
-  onCareTypeChange,
+  onCareTypeToggle,
   onNext,
   onBack,
   onSkip,
@@ -21,7 +22,7 @@ export default function MobileOnboarding({
   const isCareTypeStep = step === 2;
   const isMapStep = step === 3;
   const value = location;
-  const canContinue = isSplashStep || isMapStep || (isCareTypeStep ? Boolean(careType) : value.trim().length > 0);
+  const canContinue = isSplashStep || isMapStep || (isCareTypeStep ? selectedCareTypes.length > 0 : value.trim().length > 0);
 
   if (isMapStep) {
     return (
@@ -46,7 +47,7 @@ export default function MobileOnboarding({
             externalStatus={careIntakeProps.providerStatus}
             sourceUrl={careIntakeProps.providerSourceUrl}
             resultLocation={location}
-            resultCareType={careType}
+            resultCareType={careTypeLabel}
           />
         </section>
       </main>
@@ -79,18 +80,18 @@ export default function MobileOnboarding({
             <h1>what type of care?</h1>
             <p>No account needed. Get a list from providers near your area.</p>
 
-            <div className="mobile-onboarding__care-options" role="radiogroup" aria-label="Care type">
+            <div className="mobile-onboarding__care-options" aria-label="Care type">
               {careTypes.map((type) => (
                 <button
                   key={type}
                   type="button"
                   className={
-                    type === careType
+                    selectedCareTypes.includes(type)
                       ? "mobile-onboarding__care-option mobile-onboarding__care-option--selected"
                       : "mobile-onboarding__care-option"
                   }
-                  onClick={() => onCareTypeChange(type)}
-                  aria-pressed={type === careType}
+                  onClick={() => onCareTypeToggle(type)}
+                  aria-pressed={selectedCareTypes.includes(type)}
                 >
                   {type}
                 </button>

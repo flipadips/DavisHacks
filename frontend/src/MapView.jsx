@@ -218,12 +218,8 @@ export default function MapView({
 
           <div className="map-filter-row" aria-label="Provider filters">
             <button type="button">accepting patients</button>
-            <button type="button">
-              insurance <span aria-hidden="true">⌄</span>
-            </button>
-            <button type="button">
-              distance <span aria-hidden="true">⌄</span>
-            </button>
+            <button type="button" className="map-filter-row__select">insurance</button>
+            <button type="button" className="map-filter-row__select">distance</button>
           </div>
 
           {sourceUrl && (
@@ -252,11 +248,11 @@ export default function MapView({
                     <span>{providerInitials(pin.name)}</span>
                   </div>
                   <div className="map-provider-card__body">
-                    <strong>{pin.name}</strong>
+                    <p>{pin.name}</p>
                     <p>
                       4.5 <span aria-hidden="true">★</span> <small>(18 reviews) • nearby</small>
                     </p>
-                    <b>{careLabel || pin.label}</b>
+                    <strong>{careLabel || pin.label}</strong>
                     <em>Accepting New Patients</em>
                   </div>
                   {pin.url || sourceUrl ? (
@@ -362,3 +358,4 @@ function createMapMarkerIcon(L) {
     popupAnchor: [0, -36]
   });
 }
+
