@@ -15,24 +15,31 @@ export function useCareIntake(apiUrl) {
 
   async function saveIntake(event) {
     event.preventDefault();
+    await saveIntakeValues({ zipCode, careType });
+  }
 
-    const normalizedZip = zipCode.trim();
+  async function saveIntakeValues(nextValues) {
+    const normalizedZip = nextValues.zipCode.trim();
+    const nextCareType = nextValues.careType || careType;
 
     if (!/^\d{5}(-\d{4})?$/.test(normalizedZip)) {
       setZipError("Enter a valid 5-digit ZIP code, or ZIP+4.");
       setIntakeInfo(null);
-      return;
+      return false;
     }
 
     const nextIntakeInfo = {
       zipCode: normalizedZip,
-      careType
+      careType: nextCareType
     };
 
     writeJsonStorage("careIntake", nextIntakeInfo);
+    setZipCode(normalizedZip);
+    setCareType(nextCareType);
     setIntakeInfo(nextIntakeInfo);
     setZipError("");
     await loadProviders(nextIntakeInfo);
+    return true;
   }
 
   async function loadProviders(nextIntakeInfo) {
@@ -71,7 +78,8 @@ export function useCareIntake(apiUrl) {
     providerSourceUrl,
     setZipCode,
     setCareType,
-    saveIntake
+    saveIntake,
+    saveIntakeValues
   };
 }
 

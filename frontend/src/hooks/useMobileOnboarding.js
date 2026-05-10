@@ -11,8 +11,8 @@ export function useMobileOnboarding() {
   const [isMobile, setIsMobile] = useState(isMobileViewport);
   const [mobileOnboarding, setMobileOnboarding] = useState(() => readJsonStorage("mobileOnboarding"));
   const [step, setStep] = useState(0);
-  const [name, setName] = useState(mobileOnboarding?.name || "");
   const [location, setLocation] = useState(mobileOnboarding?.location || "");
+  const [careType, setCareType] = useState(mobileOnboarding?.careType || "");
 
   useEffect(() => {
     const mobileMatcher = window.matchMedia(mobileOnboardingQuery);
@@ -26,23 +26,29 @@ export function useMobileOnboarding() {
     };
   }, []);
 
-  function handleNext(event) {
+  async function handleNext(event) {
     event.preventDefault();
 
     if (step === 0) {
-      if (!name.trim()) return;
       setStep(1);
       return;
     }
 
     if (!location.trim()) return;
-    complete();
+
+    if (step === 1) {
+      setStep(2);
+      return;
+    }
+
+    if (!careType) return;
+    setStep(3);
   }
 
   function complete() {
     const nextOnboarding = {
-      name: name.trim(),
       location: location.trim(),
+      careType,
       completed: true
     };
 
@@ -53,12 +59,13 @@ export function useMobileOnboarding() {
   return {
     shouldShow: isMobile && !mobileOnboarding?.completed,
     step,
-    name,
     location,
-    setName,
+    careType,
     setLocation,
+    setCareType,
     handleNext,
-    goBack: () => setStep(0),
+    showMapStep: () => setStep(3),
+    goBack: () => setStep((currentStep) => Math.max(0, currentStep - 1)),
     skip: complete
   };
 }

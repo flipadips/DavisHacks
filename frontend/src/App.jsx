@@ -24,34 +24,43 @@ export default function App() {
     return (
       <MobileOnboarding
         step={onboarding.step}
-        name={onboarding.name}
         location={onboarding.location}
-        onNameChange={onboarding.setName}
+        careType={onboarding.careType}
         onLocationChange={onboarding.setLocation}
+        onCareTypeChange={onboarding.setCareType}
         onNext={onboarding.handleNext}
         onBack={onboarding.goBack}
         onSkip={onboarding.skip}
+        onDone={onboarding.skip}
+        onSubmitCare={async (event) => {
+          event.preventDefault();
+          const didSave = await intakeState.saveIntakeValues({
+            zipCode: onboarding.location,
+            careType: onboarding.careType
+          });
+
+          if (didSave) {
+            onboarding.showMapStep();
+          }
+        }}
+        careIntakeProps={{
+          zipCode: intakeState.zipCode,
+          careType: intakeState.careType,
+          intakeInfo: intakeState.intakeInfo,
+          zipError: intakeState.zipError,
+          providerStatus: intakeState.providerStatus,
+          providerSourceUrl: intakeState.providerSourceUrl,
+          onZipCodeChange: intakeState.setZipCode,
+          onCareTypeChange: intakeState.setCareType,
+          onSubmit: intakeState.saveIntake
+        }}
+        providerPins={intakeState.providerPins}
       />
     );
   }
 
   return (
     <main className="app-shell">
-      <GlobeIntro
-        providerPins={intakeState.providerPins}
-        providerStatus={intakeState.providerStatus}
-        providerSourceUrl={intakeState.providerSourceUrl}
-      />
-
-      <CommandCenter
-        command={commandState.command}
-        status={commandState.status}
-        onCommandChange={commandState.setCommand}
-        onSubmit={commandState.sendCommand}
-      />
-
-      <ApiHealthCard />
-
       <CareIntakePanel
         zipCode={intakeState.zipCode}
         careType={intakeState.careType}
@@ -63,16 +72,11 @@ export default function App() {
         onCareTypeChange={intakeState.setCareType}
         onSubmit={intakeState.saveIntake}
       />
-
-      <GeminiNexus intakeInfo={intakeState.intakeInfo} />
-
-      <ClaudePanel
-        question={claudeState.question}
-        answer={claudeState.answer}
-        status={claudeState.status}
-        model={claudeState.model}
-        onQuestionChange={claudeState.setQuestion}
-        onSubmit={claudeState.askClaude}
+      
+      <GlobeIntro
+        providerPins={intakeState.providerPins}
+        providerStatus={intakeState.providerStatus}
+        providerSourceUrl={intakeState.providerSourceUrl}
       />
 
       <CommandList commands={commandState.commands} />

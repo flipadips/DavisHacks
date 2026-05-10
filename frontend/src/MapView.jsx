@@ -20,6 +20,7 @@ export default function MapView({
   const [query, setQuery] = useState("");
   const [mapStatus, setMapStatus] = useState("Loading map...");
   const [isSearching, setIsSearching] = useState(false);
+  const [isMapReady, setIsMapReady] = useState(false);
   const providerPins = useMemo(() => externalPins.map(normalizeExternalPin).filter(Boolean), [externalPins]);
   const allPins = useMemo(() => [...providerPins, ...pins], [providerPins, pins]);
 
@@ -42,6 +43,7 @@ export default function MapView({
         }).addTo(map);
 
         mapRef.current = map;
+        setIsMapReady(true);
         setMapStatus("Ready");
       })
       .catch((error) => {
@@ -87,7 +89,7 @@ export default function MapView({
     const map = mapRef.current;
     const L = window.L;
 
-    if (!map || !L) return;
+    if (!isMapReady || !map || !L) return;
 
     markersRef.current.forEach((marker) => {
       marker.remove();
@@ -104,7 +106,7 @@ export default function MapView({
         map.fitBounds(allPins.map((pin) => pin.position), { padding: [28, 28] });
       }
     }
-  }, [allPins]);
+  }, [allPins, isMapReady]);
 
   return (
     <section className="map-panel" aria-label="Places map">
