@@ -29,6 +29,8 @@ export default function MapView({
   const [isSearching, setIsSearching] = useState(false);
   const [isMapReady, setIsMapReady] = useState(false);
   const [sheetMode, setSheetMode] = useState("half");
+  const [isInsuranceSheetOpen, setIsInsuranceSheetOpen] = useState(false);
+  const [insuranceFilter, setInsuranceFilter] = useState("Medi-Cal");
   const providerPins = useMemo(() => externalPins.map(normalizeExternalPin).filter(Boolean), [externalPins]);
   const allPins = useMemo(() => [...providerPins, ...pins], [providerPins, pins]);
   const locationLabel = formatResultLocation(resultLocation);
@@ -218,7 +220,13 @@ export default function MapView({
 
           <div className="map-filter-row" aria-label="Provider filters">
             <button type="button">accepting patients</button>
-            <button type="button" className="map-filter-row__select">insurance</button>
+            <button
+              type="button"
+              className="map-filter-row__select"
+              onClick={() => setIsInsuranceSheetOpen(true)}
+            >
+              insurance
+            </button>
             <button type="button" className="map-filter-row__select">distance</button>
           </div>
 
@@ -277,9 +285,59 @@ export default function MapView({
           )}
         </div>
       )}
+
+      <div
+        className={
+          isInsuranceSheetOpen
+            ? "map-filter-modal map-filter-modal--open"
+            : "map-filter-modal"
+        }
+        aria-hidden={!isInsuranceSheetOpen}
+      >
+        <button
+          className="map-filter-modal__scrim"
+          type="button"
+          aria-label="Close insurance filter"
+          onClick={() => setIsInsuranceSheetOpen(false)}
+        />
+        <section className="map-filter-modal__sheet" aria-label="Sort by insurance">
+          <div className="map-filter-modal__header">
+            <h3>Sort By</h3>
+            <button type="button" aria-label="Close" onClick={() => setIsInsuranceSheetOpen(false)}>
+              <span aria-hidden="true">×</span>
+            </button>
+          </div>
+
+          <div className="map-filter-modal__options">
+            {insuranceOptions.map((option) => (
+              <button
+                key={option}
+                type="button"
+                className={option === insuranceFilter ? "map-filter-modal__option map-filter-modal__option--selected" : "map-filter-modal__option"}
+                onClick={() => {
+                  setInsuranceFilter(option);
+                  setIsInsuranceSheetOpen(false);
+                }}
+              >
+                <span>{option}</span>
+                {option === insuranceFilter && <span aria-hidden="true">✓</span>}
+              </button>
+            ))}
+          </div>
+        </section>
+      </div>
     </section>
   );
 }
+
+const insuranceOptions = [
+  "Medi-Cal",
+  "Covered CA",
+  "Medicare",
+  "Kaiser",
+  "Blue Shield",
+  "Uninsured or Self Pay"
+];
 
 function formatResultLocation(value) {
   const trimmedValue = value.trim();

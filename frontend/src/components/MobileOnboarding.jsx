@@ -13,7 +13,6 @@ export default function MobileOnboarding({
   onNext,
   onBack,
   onSkip,
-  onDone,
   onSubmitCare,
   careIntakeProps,
   providerPins = []
@@ -28,17 +27,16 @@ export default function MobileOnboarding({
   if (isMapStep) {
     return (
       <main className="mobile-onboarding mobile-onboarding--map">
-        <header className="mobile-onboarding__topbar">
+        <header className="mobile-onboarding__map-searchbar">
+          <span className="mobile-onboarding__map-searchbar-icon" aria-hidden="true" />
+          <span>{location || "Search"}</span>
           <button
-            className="mobile-onboarding__back"
+            className="mobile-onboarding__map-searchbar-close"
             type="button"
-            aria-label="Go back"
-            onClick={onBack}
+            aria-label="Clear search"
+            onClick={() => onLocationChange("")}
           >
             <span aria-hidden="true" />
-          </button>
-          <button className="mobile-onboarding__skip" type="button" onClick={onDone}>
-            Done
           </button>
         </header>
 
@@ -63,6 +61,7 @@ export default function MobileOnboarding({
         </div>
 
         <form className="mobile-onboarding__form" onSubmit={onSubmitCare}>
+          <div className="mobile-onboarding__fade" key="care">
           <header className="mobile-onboarding__topbar">
             <button
               className="mobile-onboarding__back"
@@ -104,6 +103,7 @@ export default function MobileOnboarding({
               Continue
             </button>
           </footer>
+          </div>
         </form>
       </main>
     );
@@ -117,6 +117,7 @@ export default function MobileOnboarding({
         </div>
 
         <form className="mobile-onboarding__form" onSubmit={onNext}>
+          <div className="mobile-onboarding__fade" key="splash">
           <header className="mobile-onboarding__topbar">
             <button
               className="mobile-onboarding__back"
@@ -143,6 +144,7 @@ export default function MobileOnboarding({
           <footer className="mobile-onboarding__footer">
             <button type="submit">Begin</button>
           </footer>
+          </div>
         </form>
       </main>
     );
@@ -155,6 +157,7 @@ export default function MobileOnboarding({
       </div>
 
       <form className="mobile-onboarding__form" onSubmit={onNext}>
+        <div className="mobile-onboarding__fade" key="location">
         <header className="mobile-onboarding__topbar">
           <button
             className="mobile-onboarding__back"
@@ -190,6 +193,7 @@ export default function MobileOnboarding({
             Next
           </button>
         </footer>
+        </div>
       </form>
     </main>
   );
