@@ -185,7 +185,7 @@ export default function MapView({
   function openBookingFlow(event, pin) {
     event.stopPropagation();
     setBookingProvider(pin);
-    setBookingStep("detail");
+    setBookingStep("pick");
     setAppointmentDateId("mon-11");
     setAppointmentTime("1:00 PM");
     setAppointmentTransitionKey((currentValue) => currentValue + 1);
@@ -193,7 +193,7 @@ export default function MapView({
 
   function closeBookingFlow() {
     setBookingProvider(null);
-    setBookingStep("detail");
+    setBookingStep("pick");
     setAppointmentDateId("mon-11");
     setAppointmentTime("1:00 PM");
   }
@@ -448,8 +448,10 @@ export default function MapView({
           appointmentDateId={appointmentDateId}
           appointmentTime={appointmentTime}
           onBack={() => {
-            if (bookingStep === "detail") {
+            if (bookingStep === "pick") {
               closeBookingFlow();
+            } else if (bookingStep === "detail") {
+              goToAppointmentStep("pick");
             } else if (bookingStep === "time") {
               goToAppointmentStep("detail");
             } else if (bookingStep === "review") {
@@ -459,6 +461,7 @@ export default function MapView({
             }
           }}
           onClose={closeBookingFlow}
+          onSelectProvider={() => goToAppointmentStep("detail")}
           onConfirmAvailability={() => goToAppointmentStep("time")}
           onSelectDate={(dateId) => setAppointmentDateId((currentValue) => (currentValue === dateId ? "" : dateId))}
           onSelectTime={setAppointmentTime}
@@ -487,18 +490,29 @@ function AppointmentFlow({
   appointmentTime,
   onBack,
   onClose,
+  onSelectProvider,
   onConfirmAvailability,
   onSelectDate,
   onSelectTime,
   onConfirmTime,
   onConfirmAppointment
 }) {
+  const [isSpecialtySheetOpen, setIsSpecialtySheetOpen] = useState(false);
+  const [isLanguageSheetOpen, setIsLanguageSheetOpen] = useState(false);
+  const [specialtyFilter, setSpecialtyFilter] = useState("All");
+  const [languageFilter, setLanguageFilter] = useState("All");
   const selectedDate = appointmentDates.find((date) => date.id === appointmentDateId);
   const appointmentDate = selectedDate?.reviewLabel || "No date selected";
   const displayName = provider.name || "Physician";
   const pronouns = provider.pronouns || "she/her";
   const languages = provider.languages?.length ? provider.languages.join(", ") : "English";
   const insurance = provider.insurance?.[0] || "Medi-Cal";
+  const providerTags = getProviderTags(provider);
+  const specialtyOptions = ["All", ...getProviderSpecialties(provider)];
+  const languageOptions = ["All", ...uniqueSorted(provider.languages?.length ? provider.languages : ["English"])];
+  const doesProviderMatchPickerFilters =
+    (specialtyFilter === "All" || getProviderSpecialties(provider).includes(specialtyFilter)) &&
+    (languageFilter === "All" || (provider.languages?.length ? provider.languages : ["English"]).includes(languageFilter));
 
   if (step === "booked") {
     return (
@@ -522,10 +536,73 @@ function AppointmentFlow({
   }
 
   return (
-    <section className="appointment-flow" aria-label="Book appointment">
+    <section className={step === "pick" ? "appointment-flow appointment-flow--picker" : "appointment-flow"} aria-label="Book appointment">
       <button className="appointment-flow__back" type="button" aria-label="Go back" onClick={onBack}>
         <span aria-hidden="true" />
       </button>
+
+      {step === "pick" && (
+        <>
+          <h2 className="appointment-flow__picker-title">Pick a Physician</h2>
+          <div className="appointment-flow__picker-filters" aria-label="Physician filters">
+            <button
+              type="button"
+              className={specialtyFilter === "All" ? "" : "appointment-flow__picker-filter--active"}
+              onClick={() => setIsSpecialtySheetOpen(true)}
+            >
+              {specialtyFilter === "All" ? "specialty" : specialtyFilter} <span aria-hidden="true" />
+            </button>
+            <button
+              type="button"
+              className={languageFilter === "All" ? "" : "appointment-flow__picker-filter--active"}
+              onClick={() => setIsLanguageSheetOpen(true)}
+            >
+              {languageFilter === "All" ? "language" : languageFilter} <span aria-hidden="true" />
+            </button>
+          </div>
+
+          {doesProviderMatchPickerFilters ? (
+            <button className="appointment-flow__physician-card" type="button" onClick={onSelectProvider}>
+              <ProviderAvatar provider={provider} />
+              <span className="appointment-flow__physician-copy">
+                <strong>{displayName} <span>{pronouns}</span></strong>
+                <span>Available on <b>{selectedDate?.fullDay || "Friday"}</b></span>
+                <span>Speaks {languages}</span>
+              </span>
+              <span className="appointment-flow__physician-tags" aria-label="Provider tags">
+                {providerTags.map((tag) => (
+                  <span key={tag}>{tag}</span>
+                ))}
+              </span>
+            </button>
+          ) : (
+            <p className="appointment-flow__picker-empty">No physician matches those filters.</p>
+          )}
+
+          <PickerFilterSheet
+            title="Specialty"
+            isOpen={isSpecialtySheetOpen}
+            selectedOption={specialtyFilter}
+            options={specialtyOptions}
+            onClose={() => setIsSpecialtySheetOpen(false)}
+            onSelect={(option) => {
+              setSpecialtyFilter(option);
+              setIsSpecialtySheetOpen(false);
+            }}
+          />
+          <PickerFilterSheet
+            title="Language"
+            isOpen={isLanguageSheetOpen}
+            selectedOption={languageFilter}
+            options={languageOptions}
+            onClose={() => setIsLanguageSheetOpen(false)}
+            onSelect={(option) => {
+              setLanguageFilter(option);
+              setIsLanguageSheetOpen(false);
+            }}
+          />
+        </>
+      )}
 
       {step === "detail" && (
         <>
@@ -610,6 +687,44 @@ function ProviderAvatar({ provider }) {
   return (
     <div className="appointment-flow__avatar" aria-hidden="true">
       <span>{providerInitials(provider.name || "Provider")}</span>
+    </div>
+  );
+}
+
+function PickerFilterSheet({ title, isOpen, selectedOption, options, onClose, onSelect }) {
+  return (
+    <div
+      className={isOpen ? "map-filter-modal map-filter-modal--open" : "map-filter-modal"}
+      aria-hidden={!isOpen}
+    >
+      <button
+        className="map-filter-modal__scrim"
+        type="button"
+        aria-label={`Close ${title.toLowerCase()} filter`}
+        onClick={onClose}
+      />
+      <section className="map-filter-modal__sheet" aria-label={`Filter by ${title.toLowerCase()}`}>
+        <div className="map-filter-modal__header">
+          <h3>{title}</h3>
+          <button type="button" aria-label="Close" onClick={onClose}>
+            <span aria-hidden="true">×</span>
+          </button>
+        </div>
+
+        <div className="map-filter-modal__options">
+          {options.map((option) => (
+            <button
+              key={option}
+              type="button"
+              className={option === selectedOption ? "map-filter-modal__option map-filter-modal__option--selected" : "map-filter-modal__option"}
+              onClick={() => onSelect(option)}
+            >
+              <span>{option}</span>
+              {option === selectedOption && <span aria-hidden="true">✓</span>}
+            </button>
+          ))}
+        </div>
+      </section>
     </div>
   );
 }
@@ -723,6 +838,32 @@ function providerInitials(name) {
   }
 
   return words.slice(0, 2).map((word) => word[0]).join("").toUpperCase();
+}
+
+function getProviderTags(provider) {
+  const tags = [
+    ...(provider.focusTags || []),
+    ...(provider.tags || []),
+    ...(provider.specialty ? [provider.specialty] : [])
+  ];
+  const compactTags = tags
+    .map((tag) => compactCareType(String(tag)))
+    .filter(Boolean)
+    .filter((tag) => tag.length <= 18);
+  const uniqueTags = uniqueSorted(compactTags);
+
+  return uniqueTags.length > 0 ? uniqueTags.slice(0, 5) : ["BIPOC", "Youth", "Seniors", "Sex Positive"];
+}
+
+function getProviderSpecialties(provider) {
+  return uniqueSorted([
+    provider.specialty,
+    ...(provider.specialties || []),
+    ...(provider.tags || []),
+    ...(provider.focusTags || [])
+  ]
+    .map((value) => compactCareType(String(value || "")))
+    .filter(Boolean));
 }
 
 function normalizeExternalPin(pin) {

@@ -1690,22 +1690,27 @@ h1 {
     max-height: none;
     min-height: 0;
     overflow-y: auto;
-    padding: 0 0 4px;
+    padding: 0 8px 4px 0;
+    scrollbar-width: none;
+  }
+
+  .mobile-onboarding__map-stage .map-pin-list::-webkit-scrollbar {
+    display: none;
   }
 
   .mobile-onboarding__map-stage .map-pin-list li {
     position: relative;
     display: grid;
-    grid-template-columns: clamp(78px, 26vw, 104px) minmax(0, 1fr) 20px;
+    grid-template-columns: clamp(78px, 26vw, 104px) minmax(0, 1fr) 28px;
     align-items: center;
     gap: 12px;
     min-width: 0;
     min-height: 122px;
-    overflow: visible;
+    overflow: hidden;
     border: 0;
     border-bottom: 1px solid #ececec;
     border-radius: 0;
-    padding: 16px 0;
+    padding: 16px 8px 16px 0;
     background: #ffffff;
     box-shadow: none;
   }
@@ -1771,7 +1776,7 @@ h1 {
     text-overflow: ellipsis;
     white-space: normal;
     -webkit-box-orient: vertical;
-    -webkit-line-clamp: 2;
+    -webkit-line-clamp: 1;
   }
 
   .mobile-onboarding__map-stage .map-provider-card__body p,
@@ -1791,6 +1796,12 @@ h1 {
     font-size: 1rem;
     -webkit-box-orient: vertical;
     -webkit-line-clamp: 2;
+  }
+
+  .mobile-onboarding__map-stage .map-provider-card__body p:nth-of-type(2) {
+    display: block;
+    text-overflow: ellipsis;
+    white-space: nowrap;
   }
 
   body.appointment-flow-active .mobile-onboarding__map-searchbar {
@@ -1815,15 +1826,14 @@ h1 {
   }
 
   .mobile-onboarding__map-stage .map-provider-card__body em {
-    display: -webkit-box;
+    display: block;
     overflow: hidden;
     color: #28a348;
-    font-size: clamp(0.82rem, 3.7vw, 0.98rem);
+    font-size: clamp(0.78rem, 3.4vw, 0.92rem);
     font-style: normal;
+    line-height: 1.1;
     text-overflow: ellipsis;
-    white-space: normal;
-    -webkit-box-orient: vertical;
-    -webkit-line-clamp: 2;
+    white-space: nowrap;
   }
 
   .mobile-onboarding__map-stage .map-provider-card__open {
@@ -1984,6 +1994,146 @@ h1 {
     border-bottom: 2px solid #111111;
     border-left: 2px solid #111111;
     transform: rotate(45deg);
+  }
+
+  .mobile-onboarding__map-stage .appointment-flow--picker {
+    gap: 20px;
+    padding: calc(42px + env(safe-area-inset-top)) 14px calc(28px + env(safe-area-inset-bottom));
+    background: #f4f4f6;
+  }
+
+  .appointment-flow--picker .appointment-flow__back {
+    position: absolute;
+    top: calc(42px + env(safe-area-inset-top));
+    left: 14px;
+    width: 52px;
+    height: 52px;
+    box-shadow: none;
+  }
+
+  .appointment-flow__picker-title {
+    width: calc(100% - 136px);
+    margin: 8px auto 6px;
+    color: #4a4a4d;
+    font-size: clamp(1.45rem, 6vw, 1.82rem);
+    font-weight: 500;
+    line-height: 1.1;
+    text-align: center;
+  }
+
+  .appointment-flow__picker-filters {
+    display: flex;
+    gap: 10px;
+    margin-top: 8px;
+  }
+
+  .appointment-flow__picker-filters button {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    min-width: 118px;
+    min-height: 42px;
+    border: 0;
+    border-radius: 12px;
+    padding: 0 16px;
+    background: #ffffff;
+    color: #171717;
+    cursor: pointer;
+    font-size: 1rem;
+    font-weight: 800;
+    text-transform: lowercase;
+  }
+
+  .appointment-flow__picker-filters button:nth-child(2) {
+    min-width: 118px;
+    color: #ffffff;
+    background: #7465df;
+  }
+
+  .appointment-flow__picker-filters .appointment-flow__picker-filter--active {
+    color: #ffffff;
+    background: #7465df;
+  }
+
+  .appointment-flow__picker-filters button span {
+    width: 8px;
+    height: 8px;
+    margin-top: -4px;
+    border-right: 2px solid currentColor;
+    border-bottom: 2px solid currentColor;
+    transform: rotate(45deg);
+  }
+
+  .appointment-flow__physician-card {
+    display: grid;
+    grid-template-columns: 74px minmax(0, 1fr);
+    gap: 12px;
+    width: 100%;
+    border: 1px solid #e0e0e4;
+    border-radius: 14px;
+    padding: 14px 20px 18px;
+    background: #ffffff;
+    box-shadow: none;
+    color: #171717;
+    cursor: pointer;
+    text-align: left;
+  }
+
+  .appointment-flow__physician-card .appointment-flow__avatar {
+    width: 74px;
+    height: 74px;
+    border-radius: 10px;
+  }
+
+  .appointment-flow__physician-copy {
+    display: grid;
+    align-content: start;
+    min-width: 0;
+    padding-top: 6px;
+    color: #85858a;
+    font-size: 1rem;
+    line-height: 1.2;
+  }
+
+  .appointment-flow__physician-copy strong {
+    overflow: hidden;
+    color: #171717;
+    font-size: 1rem;
+    font-weight: 500;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .appointment-flow__physician-copy strong span {
+    color: #85858a;
+    font-weight: 400;
+  }
+
+  .appointment-flow__physician-copy b {
+    color: #7465df;
+    font-weight: 500;
+  }
+
+  .appointment-flow__physician-tags {
+    grid-column: 1 / -1;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    padding-top: 10px;
+  }
+
+  .appointment-flow__physician-tags span {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 36px;
+    border-radius: 12px;
+    padding: 0 18px;
+    background: #f0f0f1;
+    color: #4d4d50;
+    font-size: 0.9rem;
+    font-weight: 800;
   }
 
   .appointment-flow__avatar {
