@@ -14,7 +14,9 @@ tags:
   - name: Claude
     description: Claude AI prompt and response endpoints
   - name: Gemini
-    description: Google Gemini creative endpoints (Atlas mentor, Paper Prism, Genesis Forge)
+    description: >-
+      Affirming-care helpers powered by Google Gemini (chat with intake context, plain-language reading helper,
+      visit prep kit)
 paths:
   /api/health:
     get:
@@ -108,24 +110,24 @@ paths:
                 $ref: "#/components/schemas/ErrorResponse"
               example:
                 error: Missing ANTHROPIC_API_KEY. Add your Claude API key to backend/.env.
-  /api/gemini/atlas:
+  /api/gemini/care-chat:
     post:
       tags:
         - Gemini
-      summary: Atlas Mentor — personalized advice with semantic weather
+      summary: Supportive chat for navigating affirming care (uses optional saved intake context)
       requestBody:
         required: true
         content:
           application/json:
             schema:
-              $ref: "#/components/schemas/AtlasRequest"
+              $ref: "#/components/schemas/CareChatRequest"
       responses:
         "200":
-          description: Atlas reply (structured prose sections)
+          description: Reply text
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/AtlasResponse"
+                $ref: "#/components/schemas/CareChatResponse"
         "400":
           description: Missing message or oversized payload
           content:
@@ -140,26 +142,26 @@ paths:
                 $ref: "#/components/schemas/ErrorResponse"
               example:
                 error: Missing GEMINI_API_KEY. Add your Gemini API key to backend/.env.
-  /api/gemini/paper-prism:
+  /api/gemini/reading-helper:
     post:
       tags:
         - Gemini
-      summary: Paper Prism — structured paper synthesis with cross-domain bridge
+      summary: Plain-language summary of pasted healthcare text plus questions for a provider
       requestBody:
         required: true
         content:
           application/json:
             schema:
-              $ref: "#/components/schemas/PaperPrismRequest"
+              $ref: "#/components/schemas/ReadingHelperRequest"
       responses:
         "200":
-          description: Structured prism analysis
+          description: Summary, term glossary, and suggested questions
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/PaperPrismResponse"
+                $ref: "#/components/schemas/ReadingHelperResponse"
         "400":
-          description: Missing paper text or oversized payload
+          description: Missing pasted text or oversized payload
           content:
             application/json:
               schema:
@@ -172,26 +174,26 @@ paths:
                 $ref: "#/components/schemas/ErrorResponse"
               example:
                 error: Missing GEMINI_API_KEY. Add your Gemini API key to backend/.env.
-  /api/gemini/forge:
+  /api/gemini/visit-kit:
     post:
       tags:
         - Gemini
-      summary: Genesis Forge — linked multi-modal creative outputs from one brief
+      summary: Visit prep — opening script, phrases, checklist, reminder
       requestBody:
         required: true
         content:
           application/json:
             schema:
-              $ref: "#/components/schemas/ForgeRequest"
+              $ref: "#/components/schemas/VisitKitRequest"
       responses:
         "200":
-          description: Linked creative bundle
+          description: Structured visit preparation content
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/ForgeResponse"
+                $ref: "#/components/schemas/VisitKitResponse"
         "400":
-          description: Missing brief or oversized payload
+          description: Missing situation or oversized payload
           content:
             application/json:
               schema:
@@ -277,17 +279,14 @@ components:
         error:
           type: string
           example: Something went wrong on the server.
-    AtlasRequest:
+    CareChatRequest:
       type: object
       required:
         - message
       properties:
         displayName:
           type: string
-          example: Quinn
-        coreSignal:
-          type: string
-          description: Short note about values, constraints, or goals used to personalize tone.
+          description: Optional name or nickname for tone.
         message:
           type: string
           minLength: 1
@@ -307,87 +306,96 @@ components:
                   - model
               text:
                 type: string
-    AtlasResponse:
+        intakeContext:
+          type: object
+          description: Saved ZIP and care type from the client when available.
+          properties:
+            zipCode:
+              type: string
+            careType:
+              type: string
+    CareChatResponse:
       type: object
       required:
         - answer
       properties:
         answer:
           type: string
-    PaperPrismRequest:
+    ReadingHelperRequest:
       type: object
       required:
-        - paperText
+        - pastedText
       properties:
-        paperText:
+        pastedText:
           type: string
           minLength: 1
-        focusArea:
+        worryNote:
           type: string
-          description: Optional lens (methods, ethics, limitations, etc.).
-    PaperPrismResponse:
+          description: Optional note about what worries the reader most.
+        intakeContext:
+          type: object
+          properties:
+            zipCode:
+              type: string
+            careType:
+              type: string
+    ReadingHelperResponse:
       type: object
       required:
-        - elevatorPitch
-        - methodologyInFiveBullets
-        - crossDomainBridge
-        - skepticLens
-        - methodAsPseudocode
-        - listeningScore
+        - plainSummary
+        - keyTerms
+        - questionsForYourProvider
       properties:
-        elevatorPitch:
+        plainSummary:
           type: string
-        methodologyInFiveBullets:
+        keyTerms:
+          type: array
+          items:
+            type: object
+            required:
+              - term
+              - plainEnglish
+            properties:
+              term:
+                type: string
+              plainEnglish:
+                type: string
+        questionsForYourProvider:
           type: array
           items:
             type: string
-        crossDomainBridge:
-          type: string
-        skepticLens:
-          type: string
-        methodAsPseudocode:
-          type: string
-        listeningScore:
-          type: string
-    ForgeRequest:
+    VisitKitRequest:
       type: object
       required:
-        - brief
+        - situation
       properties:
-        brief:
+        situation:
           type: string
           minLength: 1
-        modalities:
-          type: array
-          description: >-
-            Subset of python, dialogue, chords, ascii, shell. Empty means the model picks two surprises.
-          items:
-            type: string
-            enum:
-              - python
-              - dialogue
-              - chords
-              - ascii
-              - shell
-    ForgeResponse:
+        intakeContext:
+          type: object
+          properties:
+            zipCode:
+              type: string
+            careType:
+              type: string
+    VisitKitResponse:
       type: object
       required:
-        - motif
-        - pythonUtility
-        - dialogueBeat
-        - chordRoadmap
-        - asciiArtifact
-        - shellMicroscript
+        - howToStartTheConversation
+        - phrasesYouCanUse
+        - prepChecklist
+        - reminder
       properties:
-        motif:
+        howToStartTheConversation:
           type: string
-        pythonUtility:
-          type: string
-        dialogueBeat:
-          type: string
-        chordRoadmap:
-          type: string
-        asciiArtifact:
-          type: string
-        shellMicroscript:
+        phrasesYouCanUse:
+          type: array
+          items:
+            type: string
+        prepChecklist:
+          type: array
+          items:
+            type: string
+        reminder:
           type: string

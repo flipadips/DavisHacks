@@ -544,6 +544,27 @@ h1 {
   max-width: 62ch;
 }
 
+.gemini-intake-hint {
+  margin: 14px 0 0;
+  padding: 12px 14px;
+  border-radius: 8px;
+  border: 1px solid #e2e8f0;
+  background: #f8fafc;
+  color: #475569;
+  font-size: 0.92rem;
+  line-height: 1.45;
+}
+
+.gemini-intake-hint strong {
+  color: #334155;
+}
+
+.gemini-intake-hint--ok {
+  border-color: #c8e6c9;
+  background: #f1f8f4;
+  color: #1b4332;
+}
+
 .gemini-tabs {
   display: flex;
   flex-wrap: wrap;
@@ -672,8 +693,7 @@ h1 {
   grid-column: 1 / -1;
 }
 
-.prism-card h3,
-.forge-block h3 {
+.prism-card h3 {
   margin: 0 0 10px;
   font-size: 0.95rem;
   color: #5c4d7d;
@@ -701,91 +721,68 @@ h1 {
   color: #1a202c;
 }
 
-.forge-fieldset {
-  border: 1px dashed #cfc4e6;
-  border-radius: 8px;
-  padding: 12px 14px 8px;
+.reading-results,
+.visit-results {
+  display: grid;
+  gap: 14px;
+  margin-top: 8px;
 }
 
-.forge-fieldset legend {
-  padding: 0 6px;
+.term-list {
+  margin: 0;
+}
+
+.term-row {
+  display: grid;
+  gap: 4px;
+  padding: 10px 0;
+  border-bottom: 1px solid #edf2f7;
+}
+
+.term-row:last-child {
+  border-bottom: 0;
+}
+
+.term-row dt {
+  margin: 0;
   font-weight: 800;
-  color: #4a3d66;
+  color: #2d3748;
 }
 
-.forge-chips {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 10px;
-}
-
-.forge-chip {
-  display: inline-flex;
-  align-items: center;
-  gap: 8px;
-  padding: 8px 10px;
-  border-radius: 999px;
-  border: 1px solid #dcd3ef;
-  background: #faf8ff;
-  font-weight: 600;
-  color: #3b2f55;
-}
-
-.forge-hint {
-  margin: 10px 0 4px;
-  color: #64748b;
-  font-size: 0.88rem;
-  line-height: 1.45;
-}
-
-.forge-bundle {
-  margin-top: 10px;
-  border-top: 1px solid #ece6fb;
-  padding-top: 16px;
-}
-
-.forge-motif {
-  margin: 0 0 14px;
-  padding: 12px 14px;
-  border-radius: 8px;
-  background: linear-gradient(120deg, #f6f0ff, #eef6ff);
-  border: 1px solid #e3d9fb;
-  color: #2f2542;
+.term-row dd {
+  margin: 0;
+  color: #4a5568;
   line-height: 1.5;
 }
 
-.forge-motif span {
-  display: block;
-  font-size: 0.72rem;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
-  color: #6b5a95;
-  margin-bottom: 6px;
-}
-
-.forge-columns {
-  display: grid;
-  gap: 14px;
-}
-
-.forge-block {
-  border: 1px solid #e6e0f4;
-  border-radius: 8px;
-  padding: 14px 16px;
-  background: #ffffff;
-}
-
-.forge-prose {
+.numbered-questions {
   margin: 0;
-  white-space: pre-wrap;
+  padding-left: 1.25rem;
   line-height: 1.55;
+  color: #2d3748;
 }
 
-.forge-block pre {
+.numbered-questions li {
+  margin-bottom: 8px;
+}
+
+.phrase-list,
+.checklist {
   margin: 0;
-  white-space: pre-wrap;
-  font-size: 0.88rem;
-  line-height: 1.45;
+  padding-left: 1.25rem;
+  line-height: 1.55;
+  color: #2d3748;
+}
+
+.visit-reminder {
+  margin: 0;
+  padding: 14px 16px;
+  border-radius: 8px;
+  border: 1px solid #e6e0f4;
+  background: #faf8ff;
+  color: #3b2f55;
+  line-height: 1.55;
+  font-size: 0.95rem;
 }
 
 @media (max-width: 640px) {

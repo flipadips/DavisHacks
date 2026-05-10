@@ -8,116 +8,113 @@ import {
 
 const router = Router();
 
-const paperPrismSchema = {
+const readingHelperSchema = {
   type: "object",
   properties: {
-    elevatorPitch: { type: "string", description: "One tight paragraph for a curious non-expert." },
-    methodologyInFiveBullets: {
+    plainSummary: {
+      type: "string",
+      description: "3–6 short sentences in plain language. No jargon unless explained."
+    },
+    keyTerms: {
       type: "array",
-      items: { type: "string" },
-      description: "Exactly five bullets: what they did, with nouns preserved from the paper."
+      description: "Up to 6 confusing words/phrases from the text with simple explanations.",
+      items: {
+        type: "object",
+        properties: {
+          term: { type: "string" },
+          plainEnglish: { type: "string" }
+        },
+        required: ["term", "plainEnglish"]
+      }
     },
-    crossDomainBridge: {
-      type: "string",
-      description:
-        "Explain the core idea via an analogy from a distant domain (e.g. jazz, urban planning, fermentation)."
-    },
-    skepticLens: {
-      type: "string",
-      description: "Most convincing weakness: missing control, confound, or scope limit."
-    },
-    methodAsPseudocode: {
-      type: "string",
-      description: "≤18 lines of pseudocode or numbered steps mirroring the method structure."
-    },
-    listeningScore: {
-      type: "string",
-      description:
-        "One paragraph: imaginary soundtrack brief + tempo + two instruments that capture the paper's mood."
+    questionsForYourProvider: {
+      type: "array",
+      description: "Exactly 3 questions the patient can ask their clinic.",
+      items: { type: "string" }
     }
   },
-  required: [
-    "elevatorPitch",
-    "methodologyInFiveBullets",
-    "crossDomainBridge",
-    "skepticLens",
-    "methodAsPseudocode",
-    "listeningScore"
-  ]
+  required: ["plainSummary", "keyTerms", "questionsForYourProvider"]
 };
 
-const forgeSchema = {
+const visitKitSchema = {
   type: "object",
   properties: {
-    motif: {
+    howToStartTheConversation: {
       type: "string",
-      description: "One-line recurring metaphor tying all creative outputs together."
+      description: "One short paragraph: natural way to open the topic with a provider."
     },
-    pythonUtility: {
-      type: "string",
-      description: "Small Python snippet if requested; else empty string."
+    phrasesYouCanUse: {
+      type: "array",
+      description: "4–6 short lines the user can say verbatim or adapt.",
+      items: { type: "string" }
     },
-    dialogueBeat: {
-      type: "string",
-      description: "4–8 lines of dialogue if requested; else empty string."
+    prepChecklist: {
+      type: "array",
+      description: "4–7 practical items (IDs, meds list, notes, etc.).",
+      items: { type: "string" }
     },
-    chordRoadmap: {
+    reminder: {
       type: "string",
-      description: "Chord progression as text (Roman numerals + brief mood note) if requested; else empty."
-    },
-    asciiArtifact: {
-      type: "string",
-      description: "Small ASCII illustration if requested; else empty."
-    },
-    shellMicroscript: {
-      type: "string",
-      description: "Tiny POSIX shell snippet automating a metaphorical 'ritual' from the brief; else empty."
+      description: "One grounding sentence before the visit (calm, non-judgmental)."
     }
   },
-  required: ["motif", "pythonUtility", "dialogueBeat", "chordRoadmap", "asciiArtifact", "shellMicroscript"]
+  required: ["howToStartTheConversation", "phrasesYouCanUse", "prepChecklist", "reminder"]
 };
 
-router.post("/atlas", async (req, res, next) => {
+function intakeLines(intake) {
+  if (!intake || typeof intake !== "object") return "";
+  const zip = String(intake.zipCode || "").trim();
+  const care = String(intake.careType || "").trim();
+  if (!zip && !care) return "";
+  const parts = [];
+  if (zip) parts.push(`ZIP / area: ${zip}`);
+  if (care) parts.push(`Care they are looking for: ${care}`);
+  return parts.join("\n");
+}
+
+/** Supportive care navigation — not medical advice; warm and concrete. */
+router.post("/care-chat", async (req, res, next) => {
   try {
     if (!assertGeminiKey(res)) return;
 
-    const displayName = String(req.body.displayName || "friend").trim() || "friend";
-    const coreSignal = clampText("coreSignal", req.body.coreSignal, 4000);
+    const displayName = String(req.body.displayName || "").trim() || "there";
     const message = clampText("message", req.body.message, 8000);
     const history = Array.isArray(req.body.history) ? req.body.history : [];
+    const intakeContext = intakeLines(req.body.intakeContext);
 
     if (!message.trim()) {
       return res.status(400).json({ error: "message is required." });
     }
 
-    const systemInstruction = `You are Atlas Mentor — not a generic chatbot. You reason about subtext, stakes, and tone like a skilled human coach.
-Rules:
-- Address ${displayName} naturally; never output JSON.
-- The user may share a short "signal" about values, constraints, or goals — weigh it heavily.
-- Creative requirement: open with a **Semantic Weather** line (one sentence: forecast their situation as weather + terrain; be specific, never cliché).
-- Then **Echo**: mirror their concern in ONE sentence using vocabulary overlap from their message (proves you listened).
-- Then **Guidance**: 2 short paragraphs of personalized advice (no bullet points here).
-- Then **Today**: one concrete micro-action (≤18 words) they can do before midnight.
-- Stay warm, never clinical; avoid mentioning AI or policies.`;
+    const systemInstruction = `You help people navigate LGBTQ+ affirming healthcare: finding care, preparing for visits, and understanding options.
+
+You are NOT a doctor or therapist. Do not diagnose, prescribe, or give dosages. If someone reports danger or severe symptoms, tell them to contact emergency services or an urgent clinic.
+
+Tone: respectful, plain language, short paragraphs. Address the user as "${displayName}" when natural.
+
+When "About this person" context appears below, use it to tailor suggestions (local framing is approximate — never claim a facility exists without the user naming it).
+
+Structure each reply:
+1) **Listen-back** — one sentence showing you understood their concern.
+2) **Ideas** — practical next steps (questions to ask, how to search, what to bring).
+3) **One small step** — a single doable action today.
+
+Never use corporate filler. Never mention being an AI unless asked.`;
 
     const contents = [];
 
-    if (coreSignal.trim()) {
+    if (intakeContext) {
       contents.push({
         role: "user",
-        parts: [
-          {
-            text: `[Signal about ${displayName} — values, constraints, goals]\n${coreSignal}`
-          }
-        ]
+        parts: [{ text: `About this person (from their saved intake in the app):\n${intakeContext}` }]
       });
       contents.push({
         role: "model",
-        parts: [{ text: "Understood. I'll factor that into every reply." }]
+        parts: [{ text: "Thanks — I'll keep that context in mind for this conversation." }]
       });
     }
 
-    for (const turn of history.slice(-12)) {
+    for (const turn of history.slice(-10)) {
       const role = turn.role === "model" ? "model" : "user";
       const text = String(turn.text || "").slice(0, 12000);
       if (!text.trim()) continue;
@@ -132,92 +129,90 @@ Rules:
     const answer = await generateGeminiText({
       systemInstruction,
       contents,
-      temperature: 0.85
+      temperature: 0.75
     });
 
-    res.json({ answer: answer || "Atlas had nothing to add — try rephrasing." });
+    res.json({ answer: answer || "No response text returned — try again." });
   } catch (error) {
     next(error);
   }
 });
 
-router.post("/paper-prism", async (req, res, next) => {
+/** Turn dense text (letters, abstracts, consent blurbs) into plain language + questions for the clinic. */
+router.post("/reading-helper", async (req, res, next) => {
   try {
     if (!assertGeminiKey(res)) return;
 
-    const paperText = clampText("paperText", req.body.paperText);
-    const focus = clampText("focus", req.body.focusArea || "", 2000);
+    const pastedText = clampText("pastedText", req.body.pastedText);
+    const worry = clampText("worry", req.body.worryNote || "", 1500);
+    const intakeContext = intakeLines(req.body.intakeContext);
 
-    if (!paperText.trim()) {
-      return res.status(400).json({ error: "paperText is required." });
+    if (!pastedText.trim()) {
+      return res.status(400).json({ error: "pastedText is required." });
     }
 
-    const systemInstruction = `You are Paper Prism — a research analyst that behaves like a careful reader AND a creative synthesizer.
-Extract faithful content from the pasted paper. If the paste is partial, say so inside elevatorPitch only.
-The crossDomainBridge must not merely restate the abstract; pick a distant domain.
-listeningScore is text-only (no audio): a composer brief that captures epistemic mood (tentative vs thundering).
-Keep skepticLens charitable but sharp.`;
+    const systemInstruction = `You translate confusing healthcare and benefits language into everyday English for LGBTQ+ patients and allies.
 
-    const userPrompt =
-      (focus.trim()
-        ? `Optional reader focus (prioritize this lens): ${focus}\n\n---\n\n`
-        : "") + paperText;
-
-    const prism = await generateGeminiJson({
-      systemInstruction,
-      contents: [{ role: "user", parts: [{ text: userPrompt }] }],
-      temperature: 0.35,
-      responseSchema: paperPrismSchema
-    });
-
-    res.json(prism);
-  } catch (error) {
-    next(error);
-  }
-});
-
-router.post("/forge", async (req, res, next) => {
-  try {
-    if (!assertGeminiKey(res)) return;
-
-    const brief = clampText("brief", req.body.brief, 6000);
-    const modalities = Array.isArray(req.body.modalities) ? req.body.modalities : [];
-
-    if (!brief.trim()) {
-      return res.status(400).json({ error: "brief is required." });
-    }
-
-    const allowed = new Set(["python", "dialogue", "chords", "ascii", "shell"]);
-    const chosen = [...new Set(modalities.filter((m) => allowed.has(String(m))))];
-
-    const systemInstruction = `You are Genesis Forge: one creative director that emits MULTIPLE linked artifacts from ONE brief.
 Rules:
-- Every non-empty field must explicitly reuse imagery from motif.
-- Leave a field as an empty string if that modality was not requested.
-- Python: ≤40 lines, runnable vibe, playful comments tied to motif.
-- Dialogue: characters unnamed or A/B, stage-play formatting.
-- Chords: Roman numerals for key-agnostic thinking + one sentence on groove.
-- ASCII: max width 38 chars per line, ≤10 lines.
-- Shell: ≤12 lines, bash-compatible where possible; whimsical but safe (no destructive rm -rf /).`;
+- Stay faithful to the pasted text; if something is unclear because text is cut off, say so in plainSummary only.
+- keyTerms: only terms that actually appear or are clearly implied; max 6 entries.
+- questionsForYourProvider: exactly 3 questions, specific and respectful.
+- No diagnostic claims.`;
 
-    const modalityLine =
-      chosen.length === 0
-        ? "Modalities: none specified — still fill motif and pick TWO surprises from python|dialogue|chords|ascii|shell that fit the brief."
-        : `Modalities to fill (others must be empty string): ${chosen.join(", ")}`;
+    let userBlock = "";
+    if (intakeContext) {
+      userBlock += `Reader context:\n${intakeContext}\n\n`;
+    }
+    if (worry.trim()) {
+      userBlock += `What worries them most (prioritize this):\n${worry}\n\n`;
+    }
+    userBlock += `Text to simplify:\n${pastedText}`;
 
-    const forge = await generateGeminiJson({
+    const result = await generateGeminiJson({
       systemInstruction,
-      contents: [
-        {
-          role: "user",
-          parts: [{ text: `${modalityLine}\n\nCreative brief:\n${brief}` }]
-        }
-      ],
-      temperature: 0.9,
-      responseSchema: forgeSchema
+      contents: [{ role: "user", parts: [{ text: userBlock }] }],
+      temperature: 0.35,
+      responseSchema: readingHelperSchema
     });
 
-    res.json(forge);
+    res.json(result);
+  } catch (error) {
+    next(error);
+  }
+});
+
+/** Practical phrases + checklist for an upcoming appointment or call. */
+router.post("/visit-kit", async (req, res, next) => {
+  try {
+    if (!assertGeminiKey(res)) return;
+
+    const situation = clampText("situation", req.body.situation, 6000);
+    const intakeContext = intakeLines(req.body.intakeContext);
+
+    if (!situation.trim()) {
+      return res.status(400).json({ error: "situation is required." });
+    }
+
+    const systemInstruction = `You help someone prepare for an affirming healthcare visit or phone call.
+
+Output must be practical and kind. No clinical prescriptions. No diagnosing.
+
+phrasesYouCanUse: short, sayable lines (not paragraphs). prepChecklist: concrete items only.`;
+
+    let userBlock = "";
+    if (intakeContext) {
+      userBlock += `Context from their saved intake:\n${intakeContext}\n\n`;
+    }
+    userBlock += `Describe the visit or call they are preparing for:\n${situation}`;
+
+    const kit = await generateGeminiJson({
+      systemInstruction,
+      contents: [{ role: "user", parts: [{ text: userBlock }] }],
+      temperature: 0.65,
+      responseSchema: visitKitSchema
+    });
+
+    res.json(kit);
   } catch (error) {
     next(error);
   }

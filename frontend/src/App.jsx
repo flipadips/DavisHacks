@@ -205,7 +205,7 @@ export default function App() {
         </div>
       </section>
 
-      <GeminiNexus />
+      <GeminiNexus intakeInfo={intakeInfo} />
 
       <section className="panel claude-panel">
         <div>

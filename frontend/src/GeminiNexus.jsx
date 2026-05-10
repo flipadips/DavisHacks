@@ -2,220 +2,202 @@ import React, { useState } from "react";
 
 const apiUrl = import.meta.env.VITE_API_URL || "http://localhost:3000";
 
-const FORGE_OPTS = [
-  { id: "python", label: "Python utility" },
-  { id: "dialogue", label: "Micro-script / dialogue" },
-  { id: "chords", label: "Chord roadmap (text)" },
-  { id: "ascii", label: "ASCII artifact" },
-  { id: "shell", label: "Shell micro-script" }
-];
+function intakePayload(intakeInfo) {
+  if (!intakeInfo?.zipCode || !intakeInfo?.careType) return undefined;
+  return {
+    zipCode: intakeInfo.zipCode,
+    careType: intakeInfo.careType
+  };
+}
 
-export default function GeminiNexus() {
-  const [tab, setTab] = useState("atlas");
+export default function GeminiNexus({ intakeInfo }) {
+  const [tab, setTab] = useState("chat");
 
-  const [displayName, setDisplayName] = useState("");
-  const [coreSignal, setCoreSignal] = useState("");
-  const [atlasMessage, setAtlasMessage] = useState("");
-  const [atlasHistory, setAtlasHistory] = useState([]);
-  const [atlasStatus, setAtlasStatus] = useState("Ready");
+  const [name, setName] = useState("");
+  const [chatMessage, setChatMessage] = useState("");
+  const [chatHistory, setChatHistory] = useState([]);
+  const [chatStatus, setChatStatus] = useState("Ready");
 
-  const [paperText, setPaperText] = useState("");
-  const [paperFocus, setPaperFocus] = useState("");
-  const [prism, setPrism] = useState(null);
-  const [paperStatus, setPaperStatus] = useState("Ready");
+  const [paste, setPaste] = useState("");
+  const [worryNote, setWorryNote] = useState("");
+  const [reading, setReading] = useState(null);
+  const [readingStatus, setReadingStatus] = useState("Ready");
 
-  const [forgeBrief, setForgeBrief] = useState("");
-  const [forgeMods, setForgeMods] = useState(() => new Set(["python", "dialogue", "chords"]));
-  const [forge, setForge] = useState(null);
-  const [forgeStatus, setForgeStatus] = useState("Ready");
+  const [visitSituation, setVisitSituation] = useState("");
+  const [visitKit, setVisitKit] = useState(null);
+  const [visitStatus, setVisitStatus] = useState("Ready");
 
-  function toggleForge(id) {
-    setForgeMods((prev) => {
-      const next = new Set(prev);
-      if (next.has(id)) next.delete(id);
-      else next.add(id);
-      return next;
-    });
-  }
+  const hasIntake = Boolean(intakeInfo?.zipCode && intakeInfo?.careType);
 
-  async function submitAtlas(event) {
+  async function submitChat(event) {
     event.preventDefault();
-    const msg = atlasMessage.trim();
+    const msg = chatMessage.trim();
     if (!msg) return;
 
-    setAtlasStatus("Atlas is thinking...");
-    const payload = {
-      displayName: displayName.trim() || "friend",
-      coreSignal: coreSignal.trim(),
-      message: msg,
-      history: atlasHistory
-    };
-
-    const response = await fetch(`${apiUrl}/api/gemini/atlas`, {
+    setChatStatus("Sending...");
+    const response = await fetch(`${apiUrl}/api/gemini/care-chat`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(payload)
+      body: JSON.stringify({
+        displayName: name.trim(),
+        message: msg,
+        history: chatHistory,
+        intakeContext: intakePayload(intakeInfo)
+      })
     });
 
     const data = await response.json();
-
     if (!response.ok) {
-      setAtlasStatus(data.error || "Atlas request failed");
+      setChatStatus(data.error || "Something went wrong");
       return;
     }
 
-    setAtlasHistory((h) => [
-      ...h,
-      { role: "user", text: msg },
-      { role: "model", text: data.answer || "" }
-    ]);
-    setAtlasMessage("");
-    setAtlasStatus("Ready");
+    setChatHistory((h) => [...h, { role: "user", text: msg }, { role: "model", text: data.answer || "" }]);
+    setChatMessage("");
+    setChatStatus("Ready");
   }
 
-  async function submitPaper(event) {
+  async function submitReading(event) {
     event.preventDefault();
-    const text = paperText.trim();
+    const text = paste.trim();
     if (!text) return;
 
-    setPaperStatus("Prism is refracting...");
-    setPrism(null);
+    setReadingStatus("Working...");
+    setReading(null);
 
-    const response = await fetch(`${apiUrl}/api/gemini/paper-prism`, {
+    const response = await fetch(`${apiUrl}/api/gemini/reading-helper`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
-        paperText: text,
-        focusArea: paperFocus.trim()
+        pastedText: text,
+        worryNote: worryNote.trim(),
+        intakeContext: intakePayload(intakeInfo)
       })
     });
 
     const data = await response.json();
-
     if (!response.ok) {
-      setPaperStatus(data.error || "Paper Prism failed");
+      setReadingStatus(data.error || "Something went wrong");
       return;
     }
 
-    setPrism(data);
-    setPaperStatus("Ready");
+    setReading(data);
+    setReadingStatus("Ready");
   }
 
-  async function submitForge(event) {
+  async function submitVisit(event) {
     event.preventDefault();
-    const brief = forgeBrief.trim();
-    if (!brief) return;
+    const situation = visitSituation.trim();
+    if (!situation) return;
 
-    setForgeStatus("Forge is casting...");
-    setForge(null);
+    setVisitStatus("Working...");
+    setVisitKit(null);
 
-    const modalities = Array.from(forgeMods);
-
-    const response = await fetch(`${apiUrl}/api/gemini/forge`, {
+    const response = await fetch(`${apiUrl}/api/gemini/visit-kit`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
-        brief,
-        modalities
+        situation,
+        intakeContext: intakePayload(intakeInfo)
       })
     });
 
     const data = await response.json();
-
     if (!response.ok) {
-      setForgeStatus(data.error || "Forge failed");
+      setVisitStatus(data.error || "Something went wrong");
       return;
     }
 
-    setForge(data);
-    setForgeStatus("Ready");
+    setVisitKit(data);
+    setVisitStatus("Ready");
   }
 
   return (
     <section className="gemini-shell panel">
       <div>
-        <p className="eyebrow gemini-eyebrow">Google Gemini · Nexus Lab</p>
-        <h2>Gemini Nexus</h2>
+        <p className="eyebrow gemini-eyebrow">Gemini</p>
+        <h2>Help with affirming care</h2>
         <p className="gemini-lede">
-          Three uncommon flows: a mentor that speaks in <strong>semantic weather</strong>, a prism that
-          splits papers into soundtrack briefs and distant-field analogies, and a forge that chains{" "}
-          <strong>code + stage + chords</strong> from one motif.
+          Three tools: talk through questions about finding or navigating care, turn confusing letters or articles into plain language, and get simple phrases plus a checklist before an appointment.
+          This is not medical advice — use it to prepare and advocate for yourself.
+        </p>
+        <p className={`gemini-intake-hint ${hasIntake ? "gemini-intake-hint--ok" : ""}`}>
+          {hasIntake ? (
+            <>
+              Using your saved ZIP and care type from above so answers fit what you said you need.
+            </>
+          ) : (
+            <>
+              Save your ZIP and care type in <strong>Care Intake</strong> above to personalize Gemini replies the same way as Claude.
+            </>
+          )}
         </p>
       </div>
 
-      <div className="gemini-tabs" role="tablist" aria-label="Gemini modes">
+      <div className="gemini-tabs" role="tablist" aria-label="Gemini tools">
         <button
           type="button"
           role="tab"
-          aria-selected={tab === "atlas"}
-          className={tab === "atlas" ? "gemini-tab gemini-tab--active" : "gemini-tab"}
-          onClick={() => setTab("atlas")}
+          aria-selected={tab === "chat"}
+          className={tab === "chat" ? "gemini-tab gemini-tab--active" : "gemini-tab"}
+          onClick={() => setTab("chat")}
         >
-          Atlas Mentor
+          Talk it through
         </button>
         <button
           type="button"
           role="tab"
-          aria-selected={tab === "paper"}
-          className={tab === "paper" ? "gemini-tab gemini-tab--active" : "gemini-tab"}
-          onClick={() => setTab("paper")}
+          aria-selected={tab === "reading"}
+          className={tab === "reading" ? "gemini-tab gemini-tab--active" : "gemini-tab"}
+          onClick={() => setTab("reading")}
         >
-          Paper Prism
+          Make text readable
         </button>
         <button
           type="button"
           role="tab"
-          aria-selected={tab === "forge"}
-          className={tab === "forge" ? "gemini-tab gemini-tab--active" : "gemini-tab"}
-          onClick={() => setTab("forge")}
+          aria-selected={tab === "visit"}
+          className={tab === "visit" ? "gemini-tab gemini-tab--active" : "gemini-tab"}
+          onClick={() => setTab("visit")}
         >
-          Genesis Forge
+          Prep for a visit
         </button>
       </div>
 
-      {tab === "atlas" && (
+      {tab === "chat" && (
         <div className="gemini-panel" role="tabpanel">
-          <form className="gemini-form" onSubmit={submitAtlas}>
+          <form className="gemini-form" onSubmit={submitChat}>
             <label className="gemini-label">
-              Name or nickname
+              What should we call you? (optional)
               <input
-                value={displayName}
-                onChange={(e) => setDisplayName(e.target.value)}
-                placeholder="How Atlas should address you"
+                value={name}
+                onChange={(e) => setName(e.target.value)}
+                placeholder="Name or nickname"
               />
             </label>
             <label className="gemini-label">
-              Core signal (values, constraints, goals)
+              What do you want to talk through?
               <textarea
-                value={coreSignal}
-                onChange={(e) => setCoreSignal(e.target.value)}
-                placeholder="e.g. First-gen grad student, balancing caregiving, optimizing for sleep > hustle culture."
-                rows={3}
-              />
-            </label>
-            <label className="gemini-label">
-              Message
-              <textarea
-                value={atlasMessage}
-                onChange={(e) => setAtlasMessage(e.target.value)}
-                placeholder="What's alive for you right now?"
-                rows={4}
+                value={chatMessage}
+                onChange={(e) => setChatMessage(e.target.value)}
+                placeholder="Examples: how to find an affirming provider near me, what to ask at a first visit, how to explain my needs."
+                rows={5}
               />
             </label>
             <div className="gemini-actions">
-              <button type="submit">Ask Atlas</button>
-              <span className="gemini-status">{atlasStatus}</span>
+              <button type="submit">Send</button>
+              <span className="gemini-status">{chatStatus}</span>
             </div>
           </form>
 
-          <div className="gemini-transcript" aria-label="Atlas transcript">
-            {atlasHistory.length === 0 ? (
-              <p className="empty-state">Your conversation with Atlas will collect here.</p>
+          <div className="gemini-transcript" aria-label="Conversation">
+            {chatHistory.length === 0 ? (
+              <p className="empty-state">Your conversation will show up here.</p>
             ) : (
               <ul>
-                {atlasHistory.map((turn, idx) => (
+                {chatHistory.map((turn, idx) => (
                   <li key={`${idx}-${turn.role}`} className={`gemini-turn gemini-turn--${turn.role}`}>
-                    <span className="gemini-turn__role">{turn.role === "user" ? "You" : "Atlas"}</span>
+                    <span className="gemini-turn__role">{turn.role === "user" ? "You" : "Gemini"}</span>
                     <div className="gemini-turn__text">{turn.text}</div>
                   </li>
                 ))}
@@ -225,129 +207,114 @@ export default function GeminiNexus() {
         </div>
       )}
 
-      {tab === "paper" && (
+      {tab === "reading" && (
         <div className="gemini-panel" role="tabpanel">
-          <form className="gemini-form" onSubmit={submitPaper}>
+          <form className="gemini-form" onSubmit={submitReading}>
             <label className="gemini-label">
-              Paste paper (abstract + key sections work)
+              Paste confusing text
               <textarea
-                value={paperText}
-                onChange={(e) => setPaperText(e.target.value)}
-                placeholder="Paste PDF text or the portions you care about — Prism keeps nouns faithful."
-                rows={12}
+                value={paste}
+                onChange={(e) => setPaste(e.target.value)}
+                placeholder="Insurance letter, clinic FAQ, part of a research abstract, consent form language — paste anything wordy."
+                rows={10}
               />
             </label>
             <label className="gemini-label">
-              Optional focus lens
+              What worries you most? (optional)
               <input
-                value={paperFocus}
-                onChange={(e) => setPaperFocus(e.target.value)}
-                placeholder="e.g. Limitations of the dataset; ethics of the benchmark"
+                value={worryNote}
+                onChange={(e) => setWorryNote(e.target.value)}
+                placeholder="e.g. I'm scared this means I'm not covered"
               />
             </label>
             <div className="gemini-actions">
-              <button type="submit">Run Paper Prism</button>
-              <span className="gemini-status">{paperStatus}</span>
+              <button type="submit">Simplify</button>
+              <span className="gemini-status">{readingStatus}</span>
             </div>
           </form>
 
-          {prism && (
-            <div className="prism-grid">
+          {reading && (
+            <div className="reading-results">
               <article className="prism-card prism-card--wide">
-                <h3>Elevator pitch</h3>
-                <p>{prism.elevatorPitch}</p>
+                <h3>In plain language</h3>
+                <p>{reading.plainSummary}</p>
               </article>
-              <article className="prism-card">
-                <h3>Methodology (×5)</h3>
-                <ol>
-                  {(prism.methodologyInFiveBullets || []).map((b, i) => (
-                    <li key={i}>{b}</li>
+
+              {(reading.keyTerms || []).length > 0 && (
+                <article className="prism-card prism-card--wide">
+                  <h3>Words explained</h3>
+                  <dl className="term-list">
+                    {reading.keyTerms.map((row, i) => (
+                      <div key={i} className="term-row">
+                        <dt>{row.term}</dt>
+                        <dd>{row.plainEnglish}</dd>
+                      </div>
+                    ))}
+                  </dl>
+                </article>
+              )}
+
+              <article className="prism-card prism-card--wide">
+                <h3>Questions you could ask your provider</h3>
+                <ol className="numbered-questions">
+                  {(reading.questionsForYourProvider || []).map((q, i) => (
+                    <li key={i}>{q}</li>
                   ))}
                 </ol>
-              </article>
-              <article className="prism-card">
-                <h3>Cross-domain bridge</h3>
-                <p>{prism.crossDomainBridge}</p>
-              </article>
-              <article className="prism-card">
-                <h3>Skeptic lens</h3>
-                <p>{prism.skepticLens}</p>
-              </article>
-              <article className="prism-card prism-card--code">
-                <h3>Method as pseudocode</h3>
-                <pre>{prism.methodAsPseudocode}</pre>
-              </article>
-              <article className="prism-card prism-card--wide">
-                <h3>Listening score (composer brief)</h3>
-                <p>{prism.listeningScore}</p>
               </article>
             </div>
           )}
         </div>
       )}
 
-      {tab === "forge" && (
+      {tab === "visit" && (
         <div className="gemini-panel" role="tabpanel">
-          <form className="gemini-form" onSubmit={submitForge}>
+          <form className="gemini-form" onSubmit={submitVisit}>
             <label className="gemini-label">
-              Unified creative brief
+              What are you preparing for?
               <textarea
-                value={forgeBrief}
-                onChange={(e) => setForgeBrief(e.target.value)}
-                placeholder="e.g. A lunar ferry pilot learns their logs are being rewritten by an empathy engine..."
+                value={visitSituation}
+                onChange={(e) => setVisitSituation(e.target.value)}
+                placeholder="Examples: first appointment for HRT, follow-up after labs, calling a new clinic to ask if they take my insurance."
                 rows={6}
               />
             </label>
-            <fieldset className="forge-fieldset">
-              <legend>Modalities to link</legend>
-              <div className="forge-chips">
-                {FORGE_OPTS.map((opt) => (
-                  <label key={opt.id} className="forge-chip">
-                    <input
-                      type="checkbox"
-                      checked={forgeMods.has(opt.id)}
-                      onChange={() => toggleForge(opt.id)}
-                    />
-                    <span>{opt.label}</span>
-                  </label>
-                ))}
-              </div>
-              <p className="forge-hint">
-                Leave combinations sparse for tighter motifs — or select none and let Forge choose two aligned surprises.
-              </p>
-            </fieldset>
             <div className="gemini-actions">
-              <button type="submit">Cast Genesis Forge</button>
-              <span className="gemini-status">{forgeStatus}</span>
+              <button type="submit">Build visit kit</button>
+              <span className="gemini-status">{visitStatus}</span>
             </div>
           </form>
 
-          {forge && (
-            <div className="forge-bundle">
-              <p className="forge-motif">
-                <span>Motif</span> {forge.motif}
-              </p>
-              <div className="forge-columns">
-                <ForgeBlock title="Python utility" body={forge.pythonUtility} />
-                <ForgeBlock title="Dialogue beat" body={forge.dialogueBeat} />
-                <ForgeBlock title="Chord roadmap" body={forge.chordRoadmap} />
-                <ForgeBlock title="ASCII artifact" body={forge.asciiArtifact} mono />
-                <ForgeBlock title="Shell micro-script" body={forge.shellMicroscript} mono />
-              </div>
+          {visitKit && (
+            <div className="visit-results">
+              <article className="prism-card prism-card--wide">
+                <h3>How to start</h3>
+                <p>{visitKit.howToStartTheConversation}</p>
+              </article>
+
+              <article className="prism-card prism-card--wide">
+                <h3>Phrases you can use</h3>
+                <ul className="phrase-list">
+                  {(visitKit.phrasesYouCanUse || []).map((line, i) => (
+                    <li key={i}>{line}</li>
+                  ))}
+                </ul>
+              </article>
+
+              <article className="prism-card prism-card--wide">
+                <h3>Bring / prep checklist</h3>
+                <ul className="checklist">
+                  {(visitKit.prepChecklist || []).map((item, i) => (
+                    <li key={i}>{item}</li>
+                  ))}
+                </ul>
+              </article>
+
+              <p className="visit-reminder">{visitKit.reminder}</p>
             </div>
           )}
         </div>
       )}
     </section>
-  );
-}
-
-function ForgeBlock({ title, body, mono }) {
-  if (!body || !String(body).trim()) return null;
-  return (
-    <article className="forge-block">
-      <h3>{title}</h3>
-      {mono ? <pre>{body}</pre> : <p className="forge-prose">{body}</p>}
-    </article>
   );
 }
