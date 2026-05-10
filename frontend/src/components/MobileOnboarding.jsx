@@ -45,6 +45,8 @@ export default function MobileOnboarding({
             externalPins={providerPins}
             externalStatus={careIntakeProps.providerStatus}
             sourceUrl={careIntakeProps.providerSourceUrl}
+            resultLocation={location}
+            resultCareType={careType}
           />
         </section>
       </main>

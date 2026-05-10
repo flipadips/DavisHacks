@@ -14,18 +14,25 @@ export default function MapView({
   initialPins = [],
   externalPins = [],
   externalStatus = "",
-  sourceUrl = ""
+  sourceUrl = "",
+  resultLocation = "",
+  resultCareType = ""
 }) {
   const mapNodeRef = useRef(null);
   const mapRef = useRef(null);
   const markersRef = useRef([]);
+  const markersByIdRef = useRef(new Map());
+  const sheetDragStartRef = useRef(null);
   const [pins, setPins] = useState(initialPins);
   const [query, setQuery] = useState("");
   const [mapStatus, setMapStatus] = useState("Loading map...");
   const [isSearching, setIsSearching] = useState(false);
   const [isMapReady, setIsMapReady] = useState(false);
+  const [sheetMode, setSheetMode] = useState("half");
   const providerPins = useMemo(() => externalPins.map(normalizeExternalPin).filter(Boolean), [externalPins]);
   const allPins = useMemo(() => [...providerPins, ...pins], [providerPins, pins]);
+  const locationLabel = formatResultLocation(resultLocation);
+  const careLabel = compactCareType(resultCareType);
 
   useEffect(() => {
     let isMounted = true;
@@ -90,6 +97,47 @@ export default function MapView({
     }
   }
 
+  function handleSheetPointerDown(event) {
+    sheetDragStartRef.current = event.clientY;
+    event.currentTarget.setPointerCapture?.(event.pointerId);
+  }
+
+  function handleSheetPointerUp(event) {
+    const startY = sheetDragStartRef.current;
+    sheetDragStartRef.current = null;
+
+    if (startY === null) {
+      setSheetMode((currentMode) => (currentMode === "full" ? "half" : "full"));
+      return;
+    }
+
+    const dragDistance = event.clientY - startY;
+
+    if (dragDistance < -24) {
+      setSheetMode("full");
+      return;
+    }
+
+    if (dragDistance > 24) {
+      setSheetMode("half");
+      return;
+    }
+
+    setSheetMode((currentMode) => (currentMode === "full" ? "half" : "full"));
+  }
+
+  function handlePinFocus(pin) {
+    const map = mapRef.current;
+    const marker = markersByIdRef.current.get(pin.id);
+
+    if (!map || !marker) return;
+
+    setSheetMode("half");
+    map.invalidateSize();
+    map.setView(pin.position, Math.max(map.getZoom(), 15), { animate: true });
+    marker.openPopup();
+  }
+
   useEffect(() => {
     const map = mapRef.current;
     const L = window.L;
@@ -99,11 +147,14 @@ export default function MapView({
     markersRef.current.forEach((marker) => {
       marker.remove();
     });
+    markersByIdRef.current.clear();
 
     const markerIcon = createMapMarkerIcon(L);
 
     markersRef.current = allPins.map((pin) => {
-      return L.marker(pin.position, { icon: markerIcon }).addTo(map).bindPopup(createInfoWindowContent(pin));
+      const marker = L.marker(pin.position, { icon: markerIcon }).addTo(map).bindPopup(createInfoWindowContent(pin));
+      markersByIdRef.current.set(pin.id, marker);
+      return marker;
     });
 
     if (allPins.length > 0) {
@@ -145,24 +196,127 @@ export default function MapView({
         <div className="map-canvas" ref={mapNodeRef} />
       </div>
 
-      {sourceUrl && (
-        <a className="map-source-link" href={sourceUrl} target="_blank" rel="noreferrer">
-          View source results
-        </a>
-      )}
+      {(sourceUrl || allPins.length > 0) && (
+        <div className={`map-results-sheet map-results-sheet--${sheetMode}`}>
+          <button
+            className="map-results-sheet__handle"
+            type="button"
+            aria-label={sheetMode === "full" ? "Collapse provider list" : "Expand provider list"}
+            aria-expanded={sheetMode === "full"}
+            onPointerDown={handleSheetPointerDown}
+            onPointerUp={handleSheetPointerUp}
+          >
+            <span />
+          </button>
 
-      {allPins.length > 0 && (
-        <ol className="map-pin-list" aria-label="Selected places">
-          {allPins.map((pin) => (
-            <li key={pin.id}>
-              <strong>{pin.label}</strong>
-              <span>{pin.name}</span>
-            </li>
-          ))}
-        </ol>
+          <div className="map-results-sheet__summary">
+            <p>
+              showing <strong>{allPins.length}</strong> results in
+            </p>
+            <h3>{locationLabel}</h3>
+          </div>
+
+          <div className="map-filter-row" aria-label="Provider filters">
+            <button type="button">accepting patients</button>
+            <button type="button">
+              insurance <span aria-hidden="true">⌄</span>
+            </button>
+            <button type="button">
+              distance <span aria-hidden="true">⌄</span>
+            </button>
+          </div>
+
+          {sourceUrl && (
+            <a className="map-source-link map-source-link--desktop" href={sourceUrl} target="_blank" rel="noreferrer">
+              View source results
+            </a>
+          )}
+
+          {allPins.length > 0 && (
+            <ol className="map-pin-list" aria-label="Selected places">
+              {allPins.map((pin) => (
+                <li
+                  key={pin.id}
+                  role="button"
+                  tabIndex={0}
+                  onClick={() => handlePinFocus(pin)}
+                  onKeyDown={(event) => {
+                    if (event.key === "Enter" || event.key === " ") {
+                      event.preventDefault();
+                      handlePinFocus(pin);
+                    }
+                  }}
+                  aria-label={`Show ${pin.name} on map`}
+                >
+                  <div className="map-provider-card__thumb" aria-hidden="true">
+                    <span>{providerInitials(pin.name)}</span>
+                  </div>
+                  <div className="map-provider-card__body">
+                    <strong>{pin.name}</strong>
+                    <p>
+                      4.5 <span aria-hidden="true">★</span> <small>(18 reviews) • nearby</small>
+                    </p>
+                    <b>{careLabel || pin.label}</b>
+                    <em>Accepting New Patients</em>
+                  </div>
+                  {pin.url || sourceUrl ? (
+                    <a
+                      className="map-provider-card__open"
+                      href={pin.url || sourceUrl}
+                      target="_blank"
+                      rel="noreferrer"
+                      aria-label={`Open ${pin.name}`}
+                      onClick={(event) => event.stopPropagation()}
+                    >
+                      ›
+                    </a>
+                  ) : (
+                    <span className="map-provider-card__open" aria-hidden="true">
+                      ›
+                    </span>
+                  )}
+                </li>
+              ))}
+            </ol>
+          )}
+        </div>
       )}
     </section>
   );
+}
+
+function formatResultLocation(value) {
+  const trimmedValue = value.trim();
+
+  if (!trimmedValue) {
+    return "your area";
+  }
+
+  return trimmedValue.toLowerCase();
+}
+
+function compactCareType(value) {
+  const normalizedValue = value.toLowerCase();
+
+  if (normalizedValue.includes("hormone")) return "Hormone Therapy";
+  if (normalizedValue.includes("primary")) return "Primary Care";
+  if (normalizedValue.includes("prep")) return "PrEP";
+  if (normalizedValue.includes("mental")) return "Mental Health";
+  if (normalizedValue.includes("hiv")) return "HIV Care";
+  if (normalizedValue.includes("sti")) return "STI Care";
+  if (normalizedValue.includes("gender")) return "Gender-Affirming Care";
+
+  return value;
+}
+
+function providerInitials(name) {
+  const words = name.split(/\s+/).filter(Boolean);
+
+  if (words.length === 0) {
+    return "V";
+  }
+
+  return words.slice(0, 2).map((word) => word[0]).join("").toUpperCase();
 }
 
 function normalizeExternalPin(pin) {
