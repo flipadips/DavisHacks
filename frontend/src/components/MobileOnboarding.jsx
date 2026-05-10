@@ -67,7 +67,7 @@ export default function MobileOnboarding({
 
   if (isCareTypeStep) {
     return (
-      <main className="mobile-onboarding">
+      <main className="mobile-onboarding mobile-onboarding--care">
         <div className="mobile-onboarding__globe-bg">
           <GlobeVisual />
         </div>

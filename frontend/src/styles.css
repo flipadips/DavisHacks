@@ -81,6 +81,23 @@ h1 {
   background: #f5f5f7;
 }
 
+.mobile-onboarding:not(.mobile-onboarding--map, .mobile-onboarding--care) {
+  height: 100dvh;
+  overflow: hidden;
+}
+
+.mobile-onboarding--care {
+  height: 100dvh;
+  overflow-x: hidden;
+  overflow-y: auto;
+}
+
+.mobile-onboarding--care .mobile-onboarding__form,
+.mobile-onboarding--care .mobile-onboarding__fade {
+  min-height: 100%;
+  height: auto;
+}
+
 .mobile-onboarding--map {
   overflow-y: auto;
   background: #eef2f6;
@@ -97,13 +114,15 @@ h1 {
   position: relative;
   z-index: 1;
   display: grid;
-  min-height: 100dvh;
+  height: 100%;
+  min-height: 0;
 }
 
 .mobile-onboarding__fade {
   display: grid;
   grid-template-rows: auto 1fr auto;
-  min-height: 100dvh;
+  height: 100%;
+  min-height: 0;
   animation: mobile-onboarding-fade 260ms ease both;
 }
 
