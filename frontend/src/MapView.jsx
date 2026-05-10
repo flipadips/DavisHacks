@@ -4,6 +4,9 @@ import { searchPlace } from "./map/nominatimSearch.js";
 import { buildPlacePin, createInfoWindowContent } from "./map/placePin.js";
 
 const defaultCenter = [38.5449, -121.7405];
+const cartoVoyagerTileLayer = "https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png";
+const cartoVoyagerAttribution =
+  '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/attributions">CARTO</a>';
 
 export default function MapView({
   center = defaultCenter,
@@ -34,13 +37,15 @@ export default function MapView({
         const map = L.map(mapNodeRef.current, {
           center,
           zoom,
+          zoomControl: false,
           scrollWheelZoom: true
         });
 
-        L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
+        L.tileLayer(cartoVoyagerTileLayer, {
           maxZoom: 19,
-          attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+          attribution: cartoVoyagerAttribution
         }).addTo(map);
+        L.control.zoom({ position: "bottomright" }).addTo(map);
 
         mapRef.current = map;
         setIsMapReady(true);
@@ -95,8 +100,10 @@ export default function MapView({
       marker.remove();
     });
 
+    const markerIcon = createMapMarkerIcon(L);
+
     markersRef.current = allPins.map((pin) => {
-      return L.marker(pin.position).addTo(map).bindPopup(createInfoWindowContent(pin));
+      return L.marker(pin.position, { icon: markerIcon }).addTo(map).bindPopup(createInfoWindowContent(pin));
     });
 
     if (allPins.length > 0) {
@@ -112,29 +119,31 @@ export default function MapView({
     <section className="map-panel" aria-label="Places map">
       <div className="map-panel__header">
         <div>
-          <p className="eyebrow">OpenStreetMap</p>
-          <h2>Trip Map</h2>
+          <p className="eyebrow">Streets</p>
+          <h2>Map</h2>
         </div>
         <strong>{externalStatus || mapStatus}</strong>
       </div>
 
-      <form className="map-search-row" onSubmit={handlePlaceSearch}>
-        <input
-          value={query}
-          onChange={(event) => setQuery(event.target.value)}
-          type="search"
-          placeholder="Search for a place"
-          aria-label="Search for a place"
-          autoComplete="off"
-          spellCheck="false"
-          disabled={isSearching}
-        />
-        <button type="submit" disabled={isSearching}>
-          Add
-        </button>
-      </form>
+      <div className="map-stage">
+        <form className="map-search-row" onSubmit={handlePlaceSearch}>
+          <input
+            value={query}
+            onChange={(event) => setQuery(event.target.value)}
+            type="search"
+            placeholder="Search for a place"
+            aria-label="Search for a place"
+            autoComplete="off"
+            spellCheck="false"
+            disabled={isSearching}
+          />
+          <button type="submit" disabled={isSearching}>
+            Add
+          </button>
+        </form>
 
-      <div className="map-canvas" ref={mapNodeRef} />
+        <div className="map-canvas" ref={mapNodeRef} />
+      </div>
 
       {sourceUrl && (
         <a className="map-source-link" href={sourceUrl} target="_blank" rel="noreferrer">
@@ -188,4 +197,14 @@ function getPinPosition(pin) {
   }
 
   return null;
+}
+
+function createMapMarkerIcon(L) {
+  return L.divIcon({
+    className: "map-marker-icon",
+    html: '<span class="map-marker-icon__pin"></span><span class="map-marker-icon__dot"></span>',
+    iconSize: [30, 42],
+    iconAnchor: [15, 40],
+    popupAnchor: [0, -36]
+  });
 }
