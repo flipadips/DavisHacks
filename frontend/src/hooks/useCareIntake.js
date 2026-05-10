@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { careTypes } from "../constants/careTypes.js";
 import { readJsonStorage, writeJsonStorage } from "../utils/localStorage.js";
 
@@ -12,6 +12,12 @@ export function useCareIntake(apiUrl) {
   const [providerPins, setProviderPins] = useState([]);
   const [providerStatus, setProviderStatus] = useState("Save intake to load nearby providers.");
   const [providerSourceUrl, setProviderSourceUrl] = useState("");
+
+  useEffect(() => {
+    loadDatabaseProviders().catch(() => {
+      setProviderStatus("Provider database is unavailable right now.");
+    });
+  }, [apiUrl]);
 
   async function saveIntake(event) {
     event.preventDefault();
@@ -61,6 +67,21 @@ export function useCareIntake(apiUrl) {
     }
   }
 
+  async function loadDatabaseProviders() {
+    setProviderStatus("Loading providers from database...");
+    const response = await fetch(`${apiUrl}/api/providers`);
+    const data = await response.json();
+
+    if (!response.ok) {
+      throw new Error(data.error || "Provider database failed.");
+    }
+
+    const providers = data.providers || [];
+    setProviderPins(normalizeProviderPins(providers));
+    setProviderSourceUrl("");
+    setProviderStatus(providers.length > 0 ? `${providers.length} database providers loaded.` : "No database providers found.");
+  }
+
   return {
     zipCode,
     careType,
@@ -78,9 +99,12 @@ export function useCareIntake(apiUrl) {
 
 async function fetchProviders(zipCode, careType, apiUrl) {
   const params = new URLSearchParams({
-    zip: zipCode,
     careType
   });
+
+  if (zipCode) {
+    params.set("zip", zipCode);
+  }
   const response = await fetch(`${apiUrl}/api/provider-search?${params.toString()}`);
   const data = await response.json();
 
@@ -123,10 +147,25 @@ function normalizeProviderPins(providers) {
 
       return {
         id: provider.id || provider.path || `provider-${index}`,
-        label: `Provider ${index + 1}`,
+        label: provider.placeName || provider.clinicName || `Provider ${index + 1}`,
         name: provider.name,
+        shortSummary: provider.shortSummary || provider.short_summary || "",
+        placeName: provider.placeName || provider.place_name || provider.clinicName || "",
+        clinicName: provider.clinicName || provider.placeName || provider.place_name || "",
+        address: provider.address || "",
         city: provider.city || "",
         state: provider.state || "",
+        insurance: provider.insurance || [],
+        specialty: provider.specialty || provider.specialties?.[0] || "",
+        specialties: provider.specialties || (provider.specialty ? [provider.specialty] : []),
+        rating: provider.rating,
+        reviewCount: provider.reviewCount || provider.review_count || 0,
+        acceptingPatients: Boolean(provider.acceptingPatients ?? provider.accepting_patients),
+        tags: provider.tags || [],
+        focusTags: provider.focusTags || provider.tags || [],
+        languages: provider.languages || [],
+        distanceMiles: provider.distanceMiles,
+        databaseRecord: provider.databaseRecord || null,
         url: provider.url || "",
         position
       };

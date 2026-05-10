@@ -7,7 +7,7 @@ import YAML from "yamljs";
 import { fileURLToPath } from "url";
 import { initDb, pool } from "./db.js";
 import geminiRouter from "./geminiRouter.js";
-import { searchProviders } from "./providerSearch.js";
+import { listProviders, searchProviders } from "./providerSearch.js";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -45,12 +45,20 @@ app.get("/api/provider-search", async (req, res, next) => {
     const zipCode = String(req.query.zip || "").trim();
     const careType = String(req.query.careType || "").trim();
 
-    if (!/^\d{5}(-\d{4})?$/.test(zipCode)) {
+    if (zipCode && !/^\d{5}(-\d{4})?$/.test(zipCode)) {
       return res.status(400).json({ error: "A valid ZIP code is required." });
     }
 
     const results = await searchProviders({ zipCode, careType });
     res.json(results);
+  } catch (error) {
+    next(error);
+  }
+});
+
+app.get("/api/providers", async (_req, res, next) => {
+  try {
+    res.json(await listProviders());
   } catch (error) {
     next(error);
   }

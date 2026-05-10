@@ -741,7 +741,7 @@ h1 {
   width: 22px;
   height: 22px;
   border-radius: 50% 50% 50% 0;
-  background: #ea4335;
+  background: #7465df;
   box-shadow: 0 2px 5px rgb(60 64 67 / 35%);
   transform: rotate(-45deg);
 }
@@ -1627,9 +1627,10 @@ h1 {
     transform: rotate(45deg);
   }
 
-  .mobile-onboarding__map-stage .map-filter-row button:first-child {
+  .mobile-onboarding__map-stage .map-filter-row button:first-child,
+  .mobile-onboarding__map-stage .map-filter-row__active {
     color: #ffffff;
-    background: #111111;
+    background: #7465df;
   }
 
   .mobile-onboarding__map-stage .map-pin-list {
@@ -1704,7 +1705,7 @@ h1 {
   .mobile-onboarding__map-stage .map-provider-card__body strong {
     overflow: hidden;
     color: #121212;
-    font-size: 1.02rem;
+    font-size: 1.08rem;
     font-weight: 800;
     line-height: 1.18;
     text-overflow: ellipsis;
@@ -1723,11 +1724,11 @@ h1 {
 
   .mobile-onboarding__map-stage .map-provider-card__body p {
     color: #111111;
-    font-size: 0.96rem;
+    font-size: 1rem;
   }
 
   .mobile-onboarding__map-stage .map-provider-card__body p span {
-    color: #f4bd35;
+    color: #efb936;
   }
 
   .mobile-onboarding__map-stage .map-provider-card__body p small {
@@ -1738,6 +1739,7 @@ h1 {
   .mobile-onboarding__map-stage .map-provider-card__body b {
     color: #090909;
     font-size: 1.1rem;
+    font-weight: 900;
   }
 
   .mobile-onboarding__map-stage .map-provider-card__body em {

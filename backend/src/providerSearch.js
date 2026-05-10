@@ -1,228 +1,159 @@
-const directoryBaseUrl = "https://lgbtqhealthcaredirectory.org";
-const algoliaApplicationId = process.env.LGBTQ_DIRECTORY_ALGOLIA_APP_ID || "SCMERBGKU4";
-const algoliaApiKey = process.env.LGBTQ_DIRECTORY_ALGOLIA_API_KEY || "e358a47877b821aacbdc990a7412dd36";
-const algoliaIndexName = process.env.LGBTQ_DIRECTORY_ALGOLIA_INDEX || "tsf_provider_prod";
+import { pool } from "./db.js";
+import { careTags } from "./seedProviders.js";
 
-export async function searchProviders({ zipCode, careType }) {
-  const origin = await geocodeZipCode(zipCode);
-  const sourceUrl = buildDirectoryUrl({ careType, zipCode, origin });
+const zipCenters = {
+  "95616": { lat: 38.5449, lng: -121.7405, label: "Davis, CA" },
+  "95618": { lat: 38.5449, lng: -121.7405, label: "Davis, CA" },
+  "95776": { lat: 38.6785, lng: -121.7733, label: "Woodland, CA" },
+  "95814": { lat: 38.5816, lng: -121.4944, label: "Sacramento, CA" },
+  "95816": { lat: 38.571, lng: -121.4689, label: "Sacramento, CA" },
+  "95817": { lat: 38.5518, lng: -121.4544, label: "Sacramento, CA" },
+  "95825": { lat: 38.5891, lng: -121.4088, label: "Sacramento, CA" }
+};
 
-  if (!origin) {
-    return {
-      sourceUrl,
-      providers: [],
-      message: "Could not find coordinates for that ZIP code."
-    };
-  }
+const defaultCenter = zipCenters["95616"];
 
-  const providers = await fetchProviderResults({ origin, careType });
+export async function searchProviders({ zipCode = "", careType = "" } = {}) {
+  const requestedTags = parseCareTags(careType);
+  const origin = zipCenters[String(zipCode).slice(0, 5)] || defaultCenter;
+  const providers = await fetchProvidersFromDatabase({ requestedTags, origin });
 
   return {
-    sourceUrl,
-    providers,
-    message: providers.length > 0 ? `${providers.length} providers found.` : "No providers found."
-  };
-}
-
-function buildDirectoryUrl({ careType, zipCode, origin }) {
-  const params = new URLSearchParams({
-    query: directoryQueryFromCareType(careType),
-    geo: origin ? `${origin.lat}, ${origin.lng}` : "",
-    _zip: zipCode,
-    page: "1",
-    distance: ""
-  });
-
-  return `${directoryBaseUrl}/directory?${params.toString()}`;
-}
-
-async function fetchProviderResults({ origin, careType }) {
-  const response = await fetch(algoliaEndpoint(), {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      Origin: directoryBaseUrl,
-      Referer: `${directoryBaseUrl}/`
+    source: "database",
+    sourceUrl: "",
+    query: {
+      zipCode,
+      careTypes: requestedTags,
+      origin
     },
-    body: JSON.stringify({
-      requests: [
-        {
-          indexName: algoliaIndexName,
-          params: providerSearchParams({ origin, careType })
-        }
-      ]
-    })
-  });
-
-  if (!response.ok) {
-    throw new Error("Directory provider search failed.");
-  }
-
-  const data = await response.json();
-  const hits = data.results?.[0]?.hits || [];
-
-  return hits.map(normalizeProviderHit).filter(Boolean);
-}
-
-function providerSearchParams({ origin, careType }) {
-  const params = new URLSearchParams({
-    aroundLatLng: `${origin.lat}, ${origin.lng}`,
-    facets: JSON.stringify([
-      "approach",
-      "countries",
-      "focus",
-      "gender",
-      "hispanic_latino",
-      "insurance_types",
-      "language",
-      "lgbtq_practice",
-      "licenses",
-      "orientation",
-      "race",
-      "specialty",
-      "telehealth",
-      "transgender_identity"
-    ]),
-    hitsPerPage: "9",
-    maxValuesPerFacet: "200",
-    page: "0",
-    query: ""
-  });
-
-  const specialty = directoryQueryFromCareType(careType);
-
-  if (specialty) {
-    params.set("facetFilters", JSON.stringify([[`specialty:${specialty}`]]));
-  }
-
-  return params.toString();
-}
-
-function normalizeProviderHit(hit) {
-  const location = primaryLocation(hit.address_repeater);
-  const position = providerPosition(hit, location);
-
-  if (!hit.title || !position) {
-    return null;
-  }
-
-  return {
-    id: hit.objectID || String(hit.id),
-    path: hit.slug || "",
-    name: hit.title,
-    city: location?.city || "",
-    state: location?.state || hit.us_states?.[0] || "",
-    lat: position.lat,
-    lng: position.lng,
-    url: hit.slug ? `${directoryBaseUrl}/provider/${hit.slug}` : ""
+    providers,
+    message: providers.length > 0 ? `${providers.length} providers loaded from database.` : "No database providers found."
   };
 }
 
-function primaryLocation(locations = []) {
-  return locations.find((location) => location.primary && !location.hide_listing) ||
-    locations.find((location) => !location.hide_listing) ||
-    locations[0] ||
-    null;
+export async function listProviders() {
+  const providers = await fetchProvidersFromDatabase({ requestedTags: [], origin: defaultCenter });
+
+  return {
+    source: "database",
+    providers,
+    message: providers.length > 0 ? `${providers.length} providers loaded from database.` : "No database providers found."
+  };
 }
 
-function providerPosition(hit, location) {
-  if (Number.isFinite(hit._geoloc?.lat) && Number.isFinite(hit._geoloc?.lng)) {
-    return hit._geoloc;
+async function fetchProvidersFromDatabase({ requestedTags, origin }) {
+  const values = [];
+  let whereClause = "";
+
+  if (requestedTags.length > 0) {
+    values.push(requestedTags);
+    whereClause = "WHERE tags && $1::text[]";
   }
 
-  const lat = Number(location?.lat);
-  const lng = Number(location?.lng);
+  const result = await pool.query(
+    `
+      SELECT
+        id,
+        source_id,
+        name,
+        short_summary,
+        place_name,
+        address,
+        city,
+        state,
+        latitude,
+        longitude,
+        insurance,
+        specialty,
+        rating,
+        review_count,
+        accepting_patients,
+        tags,
+        languages
+      FROM providers
+      ${whereClause}
+      ORDER BY name ASC
+    `,
+    values
+  );
 
-  if (Number.isFinite(lat) && Number.isFinite(lng)) {
-    return { lat, lng };
-  }
-
-  return null;
+  return result.rows
+    .map((provider) => normalizeProvider(provider, origin))
+    .sort((a, b) => a.distanceMiles - b.distanceMiles);
 }
 
-async function geocodeZipCode(zipCode) {
-  const params = new URLSearchParams({
-    q: zipCode,
-    format: "jsonv2",
-    limit: "1",
-    countrycodes: "us,ca"
-  });
+function normalizeProvider(provider, origin) {
+  const distanceMiles = roundDistance(distanceBetweenMiles(origin.lat, origin.lng, provider.latitude, provider.longitude));
 
-  const response = await fetch(`https://nominatim.openstreetmap.org/search?${params.toString()}`, {
-    headers: {
-      Accept: "application/json",
-      "User-Agent": "DavisHacks care finder prototype"
+  return {
+    id: provider.source_id || `provider-${provider.id}`,
+    databaseId: provider.id,
+    name: provider.name,
+    shortSummary: provider.short_summary,
+    placeName: provider.place_name,
+    clinicName: provider.place_name,
+    address: provider.address,
+    city: provider.city || "",
+    state: provider.state || "",
+    lat: provider.latitude,
+    lng: provider.longitude,
+    position: [provider.latitude, provider.longitude],
+    insurance: provider.insurance || [],
+    specialty: provider.specialty,
+    specialties: [provider.specialty],
+    rating: Number(provider.rating),
+    reviewCount: provider.review_count,
+    acceptingPatients: provider.accepting_patients,
+    tags: provider.tags || [],
+    focusTags: provider.tags || [],
+    languages: provider.languages || [],
+    distanceMiles,
+    url: "",
+    label: provider.place_name,
+    databaseRecord: {
+      name: provider.name,
+      short_summary: provider.short_summary,
+      place: {
+        name: provider.place_name,
+        address: provider.address,
+        city: provider.city,
+        state: provider.state,
+        latitude: provider.latitude,
+        longitude: provider.longitude,
+        map_query: provider.address
+      },
+      insurance: provider.insurance || [],
+      specialty: provider.specialty,
+      rating: Number(provider.rating),
+      review_count: provider.review_count,
+      accepting_patients: provider.accepting_patients,
+      tags: provider.tags || [],
+      languages: provider.languages || []
     }
-  });
-
-  if (!response.ok) {
-    return null;
-  }
-
-  const [result] = await response.json();
-
-  if (!result?.lat || !result?.lon) {
-    return null;
-  }
-
-  return {
-    lat: Number(result.lat),
-    lng: Number(result.lon)
   };
 }
 
-function algoliaEndpoint() {
-  const params = new URLSearchParams({
-    "x-algolia-agent": "Algolia for JavaScript (4.25.2); Browser (lite); JS Helper (3.14.0); react-instantsearch (6.40.4)",
-    "x-algolia-api-key": algoliaApiKey,
-    "x-algolia-application-id": algoliaApplicationId
-  });
-
-  return `https://${algoliaApplicationId.toLowerCase()}-dsn.algolia.net/1/indexes/*/queries?${params.toString()}`;
+function parseCareTags(value) {
+  return String(value || "")
+    .split(",")
+    .map((item) => item.trim())
+    .filter((item) => careTags.includes(item));
 }
 
-function directoryQueryFromCareType(careType) {
-  const normalizedCareType = careType.toLowerCase();
+function distanceBetweenMiles(lat1, lng1, lat2, lng2) {
+  const earthRadiusMiles = 3958.8;
+  const dLat = toRadians(lat2 - lat1);
+  const dLng = toRadians(lng2 - lng1);
+  const a =
+    Math.sin(dLat / 2) ** 2 +
+    Math.cos(toRadians(lat1)) * Math.cos(toRadians(lat2)) * Math.sin(dLng / 2) ** 2;
+  return earthRadiusMiles * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+}
 
-  if (normalizedCareType.includes("hormone")) {
-    return "Gender Affirming Hormone Therapy";
-  }
+function toRadians(value) {
+  return (value * Math.PI) / 180;
+}
 
-  if (normalizedCareType.includes("gender")) {
-    return "Gender Affirming Care";
-  }
-
-  if (normalizedCareType.includes("prep")) {
-    return "Pre-Exposure Prophylaxis (PrEP)";
-  }
-
-  if (normalizedCareType.includes("sti")) {
-    return "HIV/STI Testing";
-  }
-
-  if (normalizedCareType.includes("hiv")) {
-    return "HIV Care";
-  }
-
-  if (normalizedCareType.includes("sti") || normalizedCareType.includes("sexual")) {
-    return "STI Prevention & Care";
-  }
-
-  if (normalizedCareType.includes("mental") || normalizedCareType.includes("counseling")) {
-    return "Mental Health";
-  }
-
-  if (normalizedCareType.includes("family") || normalizedCareType.includes("fertility")) {
-    return "Family Planning";
-  }
-
-  if (normalizedCareType.includes("youth") || normalizedCareType.includes("adolescent")) {
-    return "Youth";
-  }
-
-  if (normalizedCareType.includes("primary")) {
-    return "Primary Care";
-  }
-
-  return careType || "";
+function roundDistance(value) {
+  return Math.round(value * 10) / 10;
 }

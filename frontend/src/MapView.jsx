@@ -30,9 +30,18 @@ export default function MapView({
   const [isMapReady, setIsMapReady] = useState(false);
   const [sheetMode, setSheetMode] = useState("half");
   const [isInsuranceSheetOpen, setIsInsuranceSheetOpen] = useState(false);
-  const [insuranceFilter, setInsuranceFilter] = useState("Medi-Cal");
+  const [insuranceFilter, setInsuranceFilter] = useState("All");
+  const [acceptingOnly, setAcceptingOnly] = useState(false);
   const providerPins = useMemo(() => externalPins.map(normalizeExternalPin).filter(Boolean), [externalPins]);
   const allPins = useMemo(() => [...providerPins, ...pins], [providerPins, pins]);
+  const filteredPins = useMemo(
+    () => filterPins(allPins, { acceptingOnly, insuranceFilter }),
+    [allPins, acceptingOnly, insuranceFilter]
+  );
+  const insuranceOptions = useMemo(
+    () => ["All", ...uniqueSorted(allPins.flatMap((pin) => pin.insurance || []))],
+    [allPins]
+  );
   const locationLabel = formatResultLocation(resultLocation);
   const careLabel = compactCareType(resultCareType);
 
@@ -153,20 +162,20 @@ export default function MapView({
 
     const markerIcon = createMapMarkerIcon(L);
 
-    markersRef.current = allPins.map((pin) => {
+    markersRef.current = filteredPins.map((pin) => {
       const marker = L.marker(pin.position, { icon: markerIcon }).addTo(map).bindPopup(createInfoWindowContent(pin));
       markersByIdRef.current.set(pin.id, marker);
       return marker;
     });
 
-    if (allPins.length > 0) {
-      if (allPins.length === 1) {
-        map.setView(allPins[0].position, 15);
+    if (filteredPins.length > 0) {
+      if (filteredPins.length === 1) {
+        map.setView(filteredPins[0].position, 15);
       } else {
-        map.fitBounds(allPins.map((pin) => pin.position), { padding: [28, 28] });
+        map.fitBounds(filteredPins.map((pin) => pin.position), { padding: [28, 28] });
       }
     }
-  }, [allPins, isMapReady]);
+  }, [filteredPins, isMapReady]);
 
   return (
     <section className="map-panel" aria-label="Places map">
@@ -213,19 +222,25 @@ export default function MapView({
 
           <div className="map-results-sheet__summary">
             <p>
-              showing <strong>{allPins.length}</strong> results in
+              showing <strong>{filteredPins.length}</strong> results in
             </p>
             <h3>{locationLabel}</h3>
           </div>
 
           <div className="map-filter-row" aria-label="Provider filters">
-            <button type="button">accepting patients</button>
+            <button
+              type="button"
+              className={acceptingOnly ? "map-filter-row__active" : ""}
+              onClick={() => setAcceptingOnly((currentValue) => !currentValue)}
+            >
+              accepting patients
+            </button>
             <button
               type="button"
               className="map-filter-row__select"
               onClick={() => setIsInsuranceSheetOpen(true)}
             >
-              insurance
+              {insuranceFilter === "All" ? "all insurances" : insuranceFilter}
             </button>
             <button type="button" className="map-filter-row__select">distance</button>
           </div>
@@ -236,9 +251,9 @@ export default function MapView({
             </a>
           )}
 
-          {allPins.length > 0 && (
+          {filteredPins.length > 0 && (
             <ol className="map-pin-list" aria-label="Selected places">
-              {allPins.map((pin) => (
+              {filteredPins.map((pin) => (
                 <li
                   key={pin.id}
                   role="button"
@@ -256,12 +271,14 @@ export default function MapView({
                     <span>{providerInitials(pin.name)}</span>
                   </div>
                   <div className="map-provider-card__body">
-                    <p>{pin.name}</p>
+                    <p>{pin.placeName || pin.name}</p>
                     <p>
-                      4.5 <span aria-hidden="true">★</span> <small>(18 reviews) • nearby</small>
+                      {formatRating(pin.rating)}
+                      <span aria-hidden="true">★</span>
+                      <small> ({pin.reviewCount || 18} reviews) • {formatDistance(pin.distanceMiles)}</small>
                     </p>
-                    <strong>{careLabel || pin.label}</strong>
-                    <em>Accepting New Patients</em>
+                    <strong>{pin.specialty || careLabel || pin.label}</strong>
+                    <em>{pin.acceptingPatients ? "Accepting New Patients" : "Not Accepting New Patients"}</em>
                   </div>
                   {pin.url || sourceUrl ? (
                     <a
@@ -282,6 +299,9 @@ export default function MapView({
                 </li>
               ))}
             </ol>
+          )}
+          {allPins.length > 0 && filteredPins.length === 0 && (
+            <p className="map-results-sheet__empty">No providers match those filters.</p>
           )}
         </div>
       )}
@@ -330,15 +350,6 @@ export default function MapView({
   );
 }
 
-const insuranceOptions = [
-  "Medi-Cal",
-  "Covered CA",
-  "Medicare",
-  "Kaiser",
-  "Blue Shield",
-  "Uninsured or Self Pay"
-];
-
 function formatResultLocation(value) {
   const trimmedValue = value.trim();
 
@@ -363,6 +374,34 @@ function compactCareType(value) {
   return value;
 }
 
+function filterPins(pins, { acceptingOnly, insuranceFilter }) {
+  return pins.filter((pin) => {
+    if (acceptingOnly && !pin.acceptingPatients) {
+      return false;
+    }
+
+    if (insuranceFilter !== "All" && !pin.insurance?.includes(insuranceFilter)) {
+      return false;
+    }
+
+    return true;
+  });
+}
+
+function uniqueSorted(values) {
+  return [...new Set(values.filter(Boolean))].sort((a, b) => a.localeCompare(b));
+}
+
+function formatRating(value) {
+  const rating = Number(value);
+  return Number.isFinite(rating) ? rating.toFixed(1) : "4.5";
+}
+
+function formatDistance(value) {
+  const distance = Number(value);
+  return Number.isFinite(distance) ? `${distance.toFixed(1)} miles` : "nearby";
+}
+
 function providerInitials(name) {
   const words = name.split(/\s+/).filter(Boolean);
 
@@ -385,8 +424,19 @@ function normalizeExternalPin(pin) {
     id: pin.id || pin.path || `${pin.name}-${position.join(",")}`,
     label: pin.label || "Provider",
     name: pin.name || "Provider",
+    shortSummary: pin.shortSummary || pin.short_summary || "",
+    placeName: pin.placeName || pin.place_name || pin.clinicName || "",
+    address: pin.address || "",
     city: pin.city || "",
     state: pin.state || "",
+    insurance: pin.insurance || [],
+    specialty: pin.specialty || pin.specialties?.[0] || "",
+    rating: Number.isFinite(Number(pin.rating)) ? Number(pin.rating) : 4.5,
+    reviewCount: Number.isFinite(Number(pin.reviewCount)) ? Number(pin.reviewCount) : 18,
+    distanceMiles: Number.isFinite(Number(pin.distanceMiles)) ? Number(pin.distanceMiles) : null,
+    tags: pin.tags || pin.focusTags || [],
+    languages: pin.languages || [],
+    acceptingPatients: Boolean(pin.acceptingPatients ?? pin.accepting_patients ?? true),
     position
   };
 }
