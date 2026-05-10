@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState } from "react";
+import React, { useEffect, useMemo, useRef, useState } from "react";
 import { loadLeaflet } from "./map/leafletLoader.js";
 import { searchPlace } from "./map/nominatimSearch.js";
 import { buildPlacePin, createInfoWindowContent } from "./map/placePin.js";
@@ -8,7 +8,10 @@ const defaultCenter = [38.5449, -121.7405];
 export default function MapView({
   center = defaultCenter,
   zoom = 13,
-  initialPins = []
+  initialPins = [],
+  externalPins = [],
+  externalStatus = "",
+  sourceUrl = ""
 }) {
   const mapNodeRef = useRef(null);
   const mapRef = useRef(null);
@@ -17,6 +20,7 @@ export default function MapView({
   const [query, setQuery] = useState("");
   const [mapStatus, setMapStatus] = useState("Loading map...");
   const [isSearching, setIsSearching] = useState(false);
+  const allPins = useMemo(() => [...externalPins, ...pins], [externalPins, pins]);
 
   useEffect(() => {
     let isMounted = true;
@@ -88,18 +92,18 @@ export default function MapView({
       marker.remove();
     });
 
-    markersRef.current = pins.map((pin) => {
+    markersRef.current = allPins.map((pin) => {
       return L.marker(pin.position).addTo(map).bindPopup(createInfoWindowContent(pin));
     });
 
-    if (pins.length > 0) {
-      if (pins.length === 1) {
-        map.setView(pins[0].position, 15);
+    if (allPins.length > 0) {
+      if (allPins.length === 1) {
+        map.setView(allPins[0].position, 15);
       } else {
-        map.fitBounds(pins.map((pin) => pin.position), { padding: [28, 28] });
+        map.fitBounds(allPins.map((pin) => pin.position), { padding: [28, 28] });
       }
     }
-  }, [pins]);
+  }, [allPins]);
 
   return (
     <section className="map-panel" aria-label="Places map">
@@ -108,7 +112,7 @@ export default function MapView({
           <p className="eyebrow">OpenStreetMap</p>
           <h2>Trip Map</h2>
         </div>
-        <strong>{mapStatus}</strong>
+        <strong>{externalStatus || mapStatus}</strong>
       </div>
 
       <form className="map-search-row" onSubmit={handlePlaceSearch}>
@@ -129,9 +133,15 @@ export default function MapView({
 
       <div className="map-canvas" ref={mapNodeRef} />
 
-      {pins.length > 0 && (
+      {sourceUrl && (
+        <a className="map-source-link" href={sourceUrl} target="_blank" rel="noreferrer">
+          View source results
+        </a>
+      )}
+
+      {allPins.length > 0 && (
         <ol className="map-pin-list" aria-label="Selected places">
-          {pins.map((pin) => (
+          {allPins.map((pin) => (
             <li key={pin.id}>
               <strong>{pin.label}</strong>
               <span>{pin.name}</span>

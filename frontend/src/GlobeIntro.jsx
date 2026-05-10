@@ -7,8 +7,14 @@ const careSignals = [
   { lat: 38.5816, lon: -121.4944 }
 ];
 
-export default function GlobeIntro() {
+export default function GlobeIntro({ providerPins = [], providerStatus = "", providerSourceUrl = "" }) {
   const [showMap, setShowMap] = useState(false);
+
+  useEffect(() => {
+    if (providerPins.length > 0) {
+      setShowMap(true);
+    }
+  }, [providerPins.length]);
 
   return (
     <section className={`globe-transition${showMap ? " globe-transition--map" : ""}`}>
@@ -28,7 +34,13 @@ export default function GlobeIntro() {
       </div>
 
       <div className="globe-map-frame" aria-hidden={!showMap}>
-        {showMap && <MapView />}
+        {showMap && (
+          <MapView
+            externalPins={providerPins}
+            externalStatus={providerStatus}
+            sourceUrl={providerSourceUrl}
+          />
+        )}
       </div>
     </section>
   );

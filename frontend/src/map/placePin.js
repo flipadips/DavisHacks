@@ -30,6 +30,27 @@ export function createInfoWindowContent(pin) {
 
   container.append(label, name, address);
 
+  if (pin.specialty) {
+    const specialty = document.createElement("small");
+    specialty.textContent = pin.specialty;
+    container.appendChild(specialty);
+  }
+
+  if (pin.phone) {
+    const phone = document.createElement("small");
+    phone.textContent = pin.phone;
+    container.appendChild(phone);
+  }
+
+  if (pin.url) {
+    const link = document.createElement("a");
+    link.href = pin.url;
+    link.target = "_blank";
+    link.rel = "noreferrer";
+    link.textContent = "View provider";
+    container.appendChild(link);
+  }
+
   return container;
 }
 

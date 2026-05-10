@@ -7,6 +7,7 @@ import YAML from "yamljs";
 import { fileURLToPath } from "url";
 import { initDb, pool } from "./db.js";
 import geminiRouter from "./geminiRouter.js";
+import { searchProviders } from "./providerSearch.js";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -34,6 +35,22 @@ app.get("/api/commands", async (_req, res, next) => {
       "SELECT id, command, status, created_at FROM commands ORDER BY created_at DESC LIMIT 25"
     );
     res.json(result.rows);
+  } catch (error) {
+    next(error);
+  }
+});
+
+app.get("/api/provider-search", async (req, res, next) => {
+  try {
+    const zipCode = String(req.query.zip || "").trim();
+    const careType = String(req.query.careType || "").trim();
+
+    if (!/^\d{5}(-\d{4})?$/.test(zipCode)) {
+      return res.status(400).json({ error: "A valid ZIP code is required." });
+    }
+
+    const results = await searchProviders({ zipCode, careType });
+    res.json(results);
   } catch (error) {
     next(error);
   }
