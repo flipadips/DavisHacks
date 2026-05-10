@@ -1727,6 +1727,12 @@ h1 {
     font-size: 1rem;
   }
 
+  body.appointment-flow-active .mobile-onboarding__map-searchbar {
+    opacity: 0;
+    pointer-events: none;
+    transform: translateY(-14px);
+  }
+
   .mobile-onboarding__map-stage .map-provider-card__body p span {
     color: #efb936;
   }
@@ -1753,7 +1759,10 @@ h1 {
     z-index: 3;
     display: grid;
     place-items: center;
+    border: 0;
+    background: transparent;
     color: #080808;
+    cursor: pointer;
     font-size: 2.2rem;
     line-height: 1;
     text-decoration: none;
@@ -1857,5 +1866,282 @@ h1 {
 
   .mobile-onboarding__map-stage .map-filter-modal__option--selected {
     color: #5b55d6;
+  }
+
+  .mobile-onboarding__map-stage .appointment-flow {
+    position: fixed;
+    inset: 0;
+    z-index: 980;
+    display: grid;
+    align-content: start;
+    gap: 28px;
+    min-height: 100dvh;
+    padding: calc(28px + env(safe-area-inset-top)) 20px calc(28px + env(safe-area-inset-bottom));
+    overflow-y: auto;
+    background: #f1f1f3;
+    color: #101010;
+    animation: appointment-slide-in 260ms ease both;
+  }
+
+  @keyframes appointment-slide-in {
+    from {
+      opacity: 0;
+      transform: translateX(36px);
+    }
+
+    to {
+      opacity: 1;
+      transform: translateX(0);
+    }
+  }
+
+  .appointment-flow__back {
+    display: grid;
+    place-items: center;
+    width: 40px;
+    height: 40px;
+    border: 0;
+    border-radius: 50%;
+    background: #ffffff;
+    cursor: pointer;
+  }
+
+  .appointment-flow__back span {
+    width: 13px;
+    height: 13px;
+    border-bottom: 2px solid #111111;
+    border-left: 2px solid #111111;
+    transform: rotate(45deg);
+  }
+
+  .appointment-flow__avatar {
+    display: grid;
+    place-items: center;
+    width: 56px;
+    height: 56px;
+    overflow: hidden;
+    border-radius: 9px;
+    background:
+      linear-gradient(135deg, rgb(22 89 92 / 74%), rgb(220 197 168 / 62%)),
+      linear-gradient(90deg, #2f6c6f 0 38%, #efdfcb 38% 72%, #6f4a33 72%);
+    color: #ffffff;
+    font-weight: 900;
+  }
+
+  .appointment-flow__provider-heading {
+    display: grid;
+    gap: 8px;
+  }
+
+  .appointment-flow__provider-heading h2,
+  .appointment-flow__title {
+    margin: 0;
+    color: #050505;
+    font-size: 1.28rem;
+    line-height: 1.1;
+  }
+
+  .appointment-flow__provider-heading h2 span,
+  .appointment-flow__review-provider strong span {
+    font-weight: 400;
+  }
+
+  .appointment-flow__provider-heading p,
+  .appointment-flow__review-provider p {
+    margin: 0;
+    color: #77777d;
+    font-size: 1.05rem;
+  }
+
+  .appointment-flow__facts,
+  .appointment-flow__review-list {
+    display: grid;
+    gap: 18px;
+  }
+
+  .appointment-flow__facts p,
+  .appointment-flow__review-list p {
+    display: grid;
+    grid-template-columns: 24px 1fr;
+    gap: 12px;
+    margin: 0;
+    color: #4f4f54;
+    font-size: 1.04rem;
+  }
+
+  .appointment-flow__facts small,
+  .appointment-flow__review-list small {
+    grid-column: 2;
+    color: #85858a;
+    font-size: 0.72rem;
+  }
+
+  .appointment-flow__description {
+    max-width: 31ch;
+    margin: 24px 0 80px;
+    color: #46464b;
+    font-size: 1rem;
+    line-height: 1.35;
+  }
+
+  .appointment-flow__footer {
+    position: fixed;
+    right: 20px;
+    bottom: calc(24px + env(safe-area-inset-bottom));
+    left: 20px;
+    display: grid;
+    gap: 12px;
+  }
+
+  .appointment-flow__footer button,
+  .appointment-flow__booked-actions button {
+    min-height: 52px;
+    border: 0;
+    border-radius: 12px;
+    color: #ffffff;
+    background: #665bdc;
+    cursor: pointer;
+    font-size: 1rem;
+  }
+
+  .appointment-flow__footer small {
+    color: #85858a;
+    text-align: center;
+  }
+
+  .appointment-flow__dates {
+    display: grid;
+    grid-template-columns: repeat(6, 1fr);
+    gap: 14px;
+    margin-top: 8px;
+  }
+
+  .appointment-flow__date {
+    display: grid;
+    justify-items: center;
+    gap: 12px;
+    color: #77777d;
+  }
+
+  .appointment-flow__date strong {
+    display: grid;
+    place-items: center;
+    width: 28px;
+    height: 28px;
+    border-radius: 50%;
+    font-weight: 500;
+  }
+
+  .appointment-flow__date--selected strong {
+    color: #ffffff;
+    background: #665bdc;
+  }
+
+  .appointment-flow__times {
+    display: grid;
+    gap: 10px;
+  }
+
+  .appointment-flow__times h3 {
+    margin: 8px 0 0;
+    color: #171717;
+    font-size: 1rem;
+    font-weight: 500;
+  }
+
+  .appointment-flow__time {
+    min-height: 38px;
+    border: 1px solid #e5e5e8;
+    border-radius: 9px;
+    background: #ffffff;
+    color: #665bdc;
+    cursor: pointer;
+    font-size: 1rem;
+  }
+
+  .appointment-flow__time--selected {
+    border-color: #665bdc;
+    box-shadow: 0 0 0 2px rgb(102 91 220 / 12%);
+  }
+
+  .appointment-flow__review-provider {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+
+  .appointment-flow__review-provider .appointment-flow__avatar {
+    width: 44px;
+    height: 44px;
+  }
+
+  .appointment-flow__review-provider strong {
+    display: block;
+    color: #101010;
+    font-size: 0.92rem;
+  }
+
+  .appointment-flow__cancel-note {
+    margin: 0;
+    color: #85858a;
+    font-size: 0.78rem;
+  }
+
+  .appointment-flow--booked {
+    place-items: center;
+    align-content: center;
+    background: #665bdc;
+    color: #ffffff;
+    text-align: center;
+  }
+
+  .appointment-flow__success {
+    display: grid;
+    place-items: center;
+    width: 82px;
+    height: 82px;
+    border-radius: 50%;
+    background: #ffffff;
+  }
+
+  .appointment-flow__success span {
+    width: 32px;
+    height: 18px;
+    border-bottom: 7px solid #665bdc;
+    border-left: 7px solid #665bdc;
+    transform: rotate(-45deg) translateY(-2px);
+  }
+
+  .appointment-flow__booked-copy h2 {
+    margin: 0 0 10px;
+    color: #ffffff;
+    font-size: 1.8rem;
+  }
+
+  .appointment-flow__booked-copy p {
+    max-width: 25ch;
+    margin: 0 auto;
+    color: #ffffff;
+    font-size: 1.18rem;
+    line-height: 1.25;
+  }
+
+  .appointment-flow__booked-actions {
+    position: fixed;
+    right: 20px;
+    bottom: calc(34px + env(safe-area-inset-bottom));
+    left: 20px;
+    display: grid;
+    gap: 18px;
+  }
+
+  .appointment-flow__booked-actions button {
+    color: #665bdc;
+    background: #ffffff;
+  }
+
+  .appointment-flow__booked-actions .appointment-flow__calendar {
+    color: #ffffff;
+    background: transparent;
   }
 }

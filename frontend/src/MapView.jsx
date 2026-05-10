@@ -32,6 +32,10 @@ export default function MapView({
   const [isInsuranceSheetOpen, setIsInsuranceSheetOpen] = useState(false);
   const [insuranceFilter, setInsuranceFilter] = useState("All");
   const [acceptingOnly, setAcceptingOnly] = useState(false);
+  const [bookingProvider, setBookingProvider] = useState(null);
+  const [bookingStep, setBookingStep] = useState("detail");
+  const [appointmentTime, setAppointmentTime] = useState("1:00 PM");
+  const [appointmentTransitionKey, setAppointmentTransitionKey] = useState(0);
   const providerPins = useMemo(() => externalPins.map(normalizeExternalPin).filter(Boolean), [externalPins]);
   const allPins = useMemo(() => [...providerPins, ...pins], [providerPins, pins]);
   const filteredPins = useMemo(
@@ -79,6 +83,14 @@ export default function MapView({
       isMounted = false;
     };
   }, [center, zoom]);
+
+  useEffect(() => {
+    document.body.classList.toggle("appointment-flow-active", Boolean(bookingProvider));
+
+    return () => {
+      document.body.classList.remove("appointment-flow-active");
+    };
+  }, [bookingProvider]);
 
   async function handlePlaceSearch(event) {
     event.preventDefault();
@@ -147,6 +159,25 @@ export default function MapView({
     map.invalidateSize();
     map.setView(pin.position, Math.max(map.getZoom(), 15), { animate: true });
     marker.openPopup();
+  }
+
+  function openBookingFlow(event, pin) {
+    event.stopPropagation();
+    setBookingProvider(pin);
+    setBookingStep("detail");
+    setAppointmentTime("1:00 PM");
+    setAppointmentTransitionKey((currentValue) => currentValue + 1);
+  }
+
+  function closeBookingFlow() {
+    setBookingProvider(null);
+    setBookingStep("detail");
+    setAppointmentTime("1:00 PM");
+  }
+
+  function goToAppointmentStep(nextStep) {
+    setBookingStep(nextStep);
+    setAppointmentTransitionKey((currentValue) => currentValue + 1);
   }
 
   useEffect(() => {
@@ -280,22 +311,14 @@ export default function MapView({
                     <strong>{pin.specialty || careLabel || pin.label}</strong>
                     <em>{pin.acceptingPatients ? "Accepting New Patients" : "Not Accepting New Patients"}</em>
                   </div>
-                  {pin.url || sourceUrl ? (
-                    <a
-                      className="map-provider-card__open"
-                      href={pin.url || sourceUrl}
-                      target="_blank"
-                      rel="noreferrer"
-                      aria-label={`Open ${pin.name}`}
-                      onClick={(event) => event.stopPropagation()}
-                    >
-                      ›
-                    </a>
-                  ) : (
-                    <span className="map-provider-card__open" aria-hidden="true">
-                      ›
-                    </span>
-                  )}
+                  <button
+                    className="map-provider-card__open"
+                    type="button"
+                    aria-label={`Book with ${pin.name}`}
+                    onClick={(event) => openBookingFlow(event, pin)}
+                  >
+                    &gt;
+                  </button>
                 </li>
               ))}
             </ol>
@@ -346,6 +369,31 @@ export default function MapView({
           </div>
         </section>
       </div>
+
+      {bookingProvider && (
+        <AppointmentFlow
+          key={`${bookingStep}-${appointmentTransitionKey}`}
+          provider={bookingProvider}
+          step={bookingStep}
+          appointmentTime={appointmentTime}
+          onBack={() => {
+            if (bookingStep === "detail") {
+              closeBookingFlow();
+            } else if (bookingStep === "time") {
+              goToAppointmentStep("detail");
+            } else if (bookingStep === "review") {
+              goToAppointmentStep("time");
+            } else {
+              closeBookingFlow();
+            }
+          }}
+          onClose={closeBookingFlow}
+          onConfirmAvailability={() => goToAppointmentStep("time")}
+          onSelectTime={setAppointmentTime}
+          onConfirmTime={() => goToAppointmentStep("review")}
+          onConfirmAppointment={() => goToAppointmentStep("booked")}
+        />
+      )}
     </section>
   );
 }
@@ -358,6 +406,156 @@ function formatResultLocation(value) {
   }
 
   return trimmedValue.toLowerCase();
+}
+
+function AppointmentFlow({
+  provider,
+  step,
+  appointmentTime,
+  onBack,
+  onClose,
+  onConfirmAvailability,
+  onSelectTime,
+  onConfirmTime,
+  onConfirmAppointment
+}) {
+  const appointmentDate = "Monday, May 11 2026";
+  const displayName = provider.name || "Physician";
+  const pronouns = provider.pronouns || "she/her";
+  const languages = provider.languages?.length ? provider.languages.join(", ") : "English";
+  const insurance = provider.insurance?.[0] || "Medi-Cal";
+
+  if (step === "booked") {
+    return (
+      <section className="appointment-flow appointment-flow--booked" aria-label="Appointment booked">
+        <div className="appointment-flow__success" aria-hidden="true">
+          <span />
+        </div>
+        <div className="appointment-flow__booked-copy">
+          <h2>You&apos;re booked!</h2>
+          <p>your appointment is confirmed. see you then!</p>
+        </div>
+        <div className="appointment-flow__booked-actions">
+          <button type="button" onClick={onClose}>Continue</button>
+          <button type="button" className="appointment-flow__calendar">Add to Calendar</button>
+        </div>
+      </section>
+    );
+  }
+
+  return (
+    <section className="appointment-flow" aria-label="Book appointment">
+      <button className="appointment-flow__back" type="button" aria-label="Go back" onClick={onBack}>
+        <span aria-hidden="true" />
+      </button>
+
+      {step === "detail" && (
+        <>
+          <ProviderAvatar provider={provider} />
+          <div className="appointment-flow__provider-heading">
+            <h2>{displayName} <span>{pronouns}</span></h2>
+            <p>{provider.specialty ? titleCaseLower(provider.specialty) : "Doctor"}</p>
+          </div>
+          <div className="appointment-flow__facts">
+            <p><span aria-hidden="true">▣</span> Available on Monday <small>45 min In Person Session</small></p>
+            <p><span aria-hidden="true">▣</span> Speaks {languages}</p>
+          </div>
+          <p className="appointment-flow__description">
+            {provider.shortSummary || "I provide affirming, compassionate care and help patients find support that fits their goals."}
+          </p>
+          <div className="appointment-flow__footer">
+            <button type="button" onClick={onConfirmAvailability}>Confirm Availability</button>
+            <small>free cancellation available 48 hours in advance</small>
+          </div>
+        </>
+      )}
+
+      {step === "time" && (
+        <>
+          <DateStrip />
+          <TimePicker selectedTime={appointmentTime} onSelectTime={onSelectTime} />
+          <div className="appointment-flow__footer">
+            <button type="button" onClick={onConfirmTime}>Confirm Time</button>
+            <small>free cancellation available 48 hours in advance</small>
+          </div>
+        </>
+      )}
+
+      {step === "review" && (
+        <>
+          <h2 className="appointment-flow__title">Your Appointment</h2>
+          <div className="appointment-flow__review-provider">
+            <ProviderAvatar provider={provider} />
+            <div>
+              <strong>{displayName} <span>{pronouns}</span></strong>
+              <p>{provider.specialty ? titleCaseLower(provider.specialty) : "Doctor"}</p>
+            </div>
+          </div>
+          <div className="appointment-flow__review-list">
+            <p><span aria-hidden="true">▣</span> {appointmentDate}<small>{appointmentTime} In Person Session</small></p>
+            <p><span aria-hidden="true">▣</span> {insurance}</p>
+          </div>
+          <p className="appointment-flow__cancel-note">free cancellation available 48 hours in advance</p>
+          <div className="appointment-flow__footer">
+            <button type="button" onClick={onConfirmAppointment}>Confirm Appointment</button>
+            <small>free cancellation available 48 hours in advance</small>
+          </div>
+        </>
+      )}
+    </section>
+  );
+}
+
+function ProviderAvatar({ provider }) {
+  return (
+    <div className="appointment-flow__avatar" aria-hidden="true">
+      <span>{providerInitials(provider.name || "Provider")}</span>
+    </div>
+  );
+}
+
+function DateStrip() {
+  const dates = [
+    ["Sun", "10"],
+    ["Mon", "11"],
+    ["Tue", "12"],
+    ["Wed", "13"],
+    ["Thu", "14"],
+    ["Fri", "15"]
+  ];
+
+  return (
+    <div className="appointment-flow__dates" aria-label="Appointment dates">
+      {dates.map(([day, date]) => (
+        <div key={day} className={day === "Mon" ? "appointment-flow__date appointment-flow__date--selected" : "appointment-flow__date"}>
+          <span>{day}</span>
+          <strong>{date}</strong>
+        </div>
+      ))}
+    </div>
+  );
+}
+
+function TimePicker({ selectedTime, onSelectTime }) {
+  const afternoon = ["1:00 PM", "2:00 PM", "3:00 PM", "4:00 PM"];
+  const evening = ["6:00 PM", "7:00 PM"];
+
+  return (
+    <div className="appointment-flow__times">
+      <h3>Afternoon</h3>
+      {afternoon.map((time) => (
+        <button key={time} type="button" className={time === selectedTime ? "appointment-flow__time appointment-flow__time--selected" : "appointment-flow__time"} onClick={() => onSelectTime(time)}>
+          {time}
+        </button>
+      ))}
+      <h3>Evening</h3>
+      {evening.map((time) => (
+        <button key={time} type="button" className={time === selectedTime ? "appointment-flow__time appointment-flow__time--selected" : "appointment-flow__time"} onClick={() => onSelectTime(time)}>
+          {time}
+        </button>
+      ))}
+    </div>
+  );
 }
 
 function compactCareType(value) {
@@ -400,6 +598,12 @@ function formatRating(value) {
 function formatDistance(value) {
   const distance = Number(value);
   return Number.isFinite(distance) ? `${distance.toFixed(1)} miles` : "nearby";
+}
+
+function titleCaseLower(value) {
+  return String(value || "")
+    .toLowerCase()
+    .replace(/\b\w/g, (letter) => letter.toUpperCase());
 }
 
 function providerInitials(name) {
@@ -466,4 +670,5 @@ function createMapMarkerIcon(L) {
     popupAnchor: [0, -36]
   });
 }
+
 
