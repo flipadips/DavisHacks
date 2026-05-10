@@ -1721,29 +1721,17 @@ h1 {
     align-self: center;
     overflow: hidden;
     border-radius: 12px;
-    background:
-      linear-gradient(135deg, rgb(24 45 57 / 82%), rgb(111 82 56 / 74%)),
-      linear-gradient(90deg, #74513c 0 26%, #1c3f4f 26% 42%, #e0d0bc 42% 66%, #8a382c 66%);
+    background: #e7ebef;
     color: #ffffff;
     font-size: clamp(1.05rem, 5vw, 1.45rem);
     font-weight: 900;
   }
 
-  .mobile-onboarding__map-stage .map-provider-card__thumb span {
-    color: #ffffff;
-    overflow-wrap: anywhere;
-  }
-
-  .mobile-onboarding__map-stage .map-pin-list li:nth-child(2n) .map-provider-card__thumb {
-    background:
-      linear-gradient(135deg, rgb(28 52 69 / 76%), rgb(201 178 139 / 64%)),
-      linear-gradient(90deg, #c9ad72 0 48%, #eef3f5 48% 72%, #4a6070 72%);
-  }
-
-  .mobile-onboarding__map-stage .map-pin-list li:nth-child(3n) .map-provider-card__thumb {
-    background:
-      linear-gradient(135deg, rgb(19 77 133 / 76%), rgb(241 246 251 / 72%)),
-      linear-gradient(90deg, #2369a4 0 40%, #f4f7fa 40% 72%, #d9e0e5 72%);
+  .mobile-onboarding__map-stage .map-provider-card__thumb img {
+    display: block;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
   }
 
   .mobile-onboarding__map-stage .map-provider-card__body {
@@ -2178,6 +2166,13 @@ h1 {
       linear-gradient(90deg, #2f6c6f 0 38%, #efdfcb 38% 72%, #6f4a33 72%);
     color: #ffffff;
     font-weight: 900;
+  }
+
+  .appointment-flow__avatar img {
+    display: block;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
   }
 
   .appointment-flow__provider-heading {
