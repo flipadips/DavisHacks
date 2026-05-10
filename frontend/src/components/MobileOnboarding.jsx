@@ -1,4 +1,5 @@
 import React, { useRef, useState } from "react";
+import { Search, X } from "lucide-react";
 import GlobeVisual from "./GlobeVisual.jsx";
 import MapView from "../MapView.jsx";
 import { careTypes } from "../constants/careTypes.js";
@@ -30,7 +31,7 @@ export default function MobileOnboarding({
     return (
       <main className="mobile-onboarding mobile-onboarding--map">
         <form className="mobile-onboarding__map-searchbar" onSubmit={onSubmitLocationSearch}>
-          <span className="mobile-onboarding__map-searchbar-icon" aria-hidden="true" />
+          <Search className="mobile-onboarding__map-searchbar-icon" aria-hidden="true" strokeWidth={2.4} />
           <input
             ref={mapSearchInputRef}
             value={location}
@@ -47,7 +48,7 @@ export default function MobileOnboarding({
               requestAnimationFrame(() => mapSearchInputRef.current?.focus());
             }}
           >
-            <span aria-hidden="true" />
+            <X aria-hidden="true" strokeWidth={2.4} />
           </button>
         </form>
 

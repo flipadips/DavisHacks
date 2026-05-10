@@ -337,7 +337,7 @@ export default function MapView({
                       <span aria-hidden="true">★</span>
                       <small> ({pin.reviewCount || 18} reviews) • {formatDistance(pin.distanceMiles)}</small>
                     </p>
-                    <strong>{pin.specialty || careLabel || pin.label}</strong>
+                    <strong>{formatSpecialtyLabel(pin.specialty || careLabel || pin.label)}</strong>
                     <em>{pin.acceptingPatients ? "Accepting New Patients" : "Not Accepting New Patients"}</em>
                   </div>
                   <button
@@ -442,9 +442,9 @@ export default function MapView({
 
       {bookingProvider && (
         <AppointmentFlow
-          key={`${bookingStep}-${appointmentTransitionKey}`}
           provider={bookingProvider}
           step={bookingStep}
+          transitionKey={appointmentTransitionKey}
           appointmentDateId={appointmentDateId}
           appointmentTime={appointmentTime}
           onBack={() => {
@@ -486,6 +486,7 @@ function formatResultLocation(value) {
 function AppointmentFlow({
   provider,
   step,
+  transitionKey,
   appointmentDateId,
   appointmentTime,
   onBack,
@@ -517,19 +518,21 @@ function AppointmentFlow({
   if (step === "booked") {
     return (
       <section className="appointment-flow appointment-flow--booked" aria-label="Appointment booked">
-        <div className="appointment-flow__success" aria-hidden="true">
-          <span />
-        </div>
-        <div className="appointment-flow__booked-copy">
-          <h2>You&apos;re booked!</h2>
-          <p>your appointment is confirmed. see you then!</p>
-        </div>
-        <div className="appointment-flow__booked-actions">
-          <button type="button" onClick={onClose}>Continue</button>
-          <button type="button" className="appointment-flow__calendar">
-            <span className="appointment-flow__calendar-icon" aria-hidden="true" />
-            Add to Calendar
-          </button>
+        <div key={`${step}-${transitionKey}`} className="appointment-flow__screen appointment-flow__screen--booked">
+          <div className="appointment-flow__success" aria-hidden="true">
+            <span />
+          </div>
+          <div className="appointment-flow__booked-copy">
+            <h2>You&apos;re booked!</h2>
+            <p>your appointment is confirmed. see you then!</p>
+          </div>
+          <div className="appointment-flow__booked-actions">
+            <button type="button" onClick={onClose}>Continue</button>
+            <button type="button" className="appointment-flow__calendar">
+              <span className="appointment-flow__calendar-icon" aria-hidden="true" />
+              Add to Calendar
+            </button>
+          </div>
         </div>
       </section>
     );
@@ -537,12 +540,13 @@ function AppointmentFlow({
 
   return (
     <section className={step === "pick" ? "appointment-flow appointment-flow--picker" : "appointment-flow"} aria-label="Book appointment">
-      <button className="appointment-flow__back" type="button" aria-label="Go back" onClick={onBack}>
-        <span aria-hidden="true" />
-      </button>
+      <div key={`${step}-${transitionKey}`} className="appointment-flow__screen">
+        <button className="appointment-flow__back" type="button" aria-label="Go back" onClick={onBack}>
+          <span aria-hidden="true" />
+        </button>
 
-      {step === "pick" && (
-        <>
+        {step === "pick" && (
+          <>
           <h2 className="appointment-flow__picker-title">Pick a Physician</h2>
           <div className="appointment-flow__picker-filters" aria-label="Physician filters">
             <button
@@ -601,15 +605,15 @@ function AppointmentFlow({
               setIsLanguageSheetOpen(false);
             }}
           />
-        </>
-      )}
+          </>
+        )}
 
-      {step === "detail" && (
-        <>
+        {step === "detail" && (
+          <>
           <ProviderAvatar provider={provider} />
           <div className="appointment-flow__provider-heading">
             <h2>{displayName} <span>{pronouns}</span></h2>
-            <p>{provider.specialty ? titleCaseLower(provider.specialty) : "Doctor"}</p>
+            <p>{provider.specialty ? formatSpecialtyLabel(provider.specialty) : "Doctor"}</p>
           </div>
           <div className="appointment-flow__facts">
             <p>
@@ -633,28 +637,28 @@ function AppointmentFlow({
             <button type="button" onClick={onConfirmAvailability}>Confirm Availability</button>
             <small>free cancellation available 48 hours in advance</small>
           </div>
-        </>
-      )}
+          </>
+        )}
 
-      {step === "time" && (
-        <>
+        {step === "time" && (
+          <>
           <DateStrip selectedDateId={appointmentDateId} onSelectDate={onSelectDate} />
           <TimePicker selectedTime={appointmentTime} onSelectTime={onSelectTime} />
           <div className="appointment-flow__footer">
             <button type="button" onClick={onConfirmTime}>Confirm Time</button>
             <small>free cancellation available 48 hours in advance</small>
           </div>
-        </>
-      )}
+          </>
+        )}
 
-      {step === "review" && (
-        <>
+        {step === "review" && (
+          <>
           <h2 className="appointment-flow__title">Your Appointment</h2>
           <div className="appointment-flow__review-provider">
             <ProviderAvatar provider={provider} />
             <div>
               <strong>{displayName} <span>{pronouns}</span></strong>
-              <p>{provider.specialty ? titleCaseLower(provider.specialty) : "Doctor"}</p>
+              <p>{provider.specialty ? formatSpecialtyLabel(provider.specialty) : "Doctor"}</p>
             </div>
           </div>
           <div className="appointment-flow__review-list">
@@ -677,8 +681,9 @@ function AppointmentFlow({
             <button type="button" onClick={onConfirmAppointment}>Confirm Appointment</button>
             <small>free cancellation available 48 hours in advance</small>
           </div>
-        </>
-      )}
+          </>
+        )}
+      </div>
     </section>
   );
 }
@@ -781,7 +786,7 @@ function compactCareType(value) {
   if (normalizedValue.includes("sti")) return "STI Care";
   if (normalizedValue.includes("gender")) return "Gender-Affirming Care";
 
-  return value;
+  return formatSpecialtyLabel(value);
 }
 
 function filterPins(pins, { acceptingOnly, insuranceFilter, distanceFilter }) {
@@ -828,6 +833,19 @@ function titleCaseLower(value) {
   return String(value || "")
     .toLowerCase()
     .replace(/\b\w/g, (letter) => letter.toUpperCase());
+}
+
+function formatSpecialtyLabel(value) {
+  const normalizedValue = String(value || "").trim();
+  const upperValue = normalizedValue.toUpperCase();
+
+  if (!normalizedValue) return "";
+  if (upperValue === "OB GYN") return "OB GYN";
+  if (upperValue === "PREP") return "PrEP";
+  if (upperValue === "HRT") return "HRT";
+  if (upperValue === "STI") return "STI";
+
+  return titleCaseLower(normalizedValue);
 }
 
 function providerInitials(name) {
