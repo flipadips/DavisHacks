@@ -3,6 +3,18 @@ import { Check } from "lucide-react";
 import appointmentCalendarIcon from "./assets/appointment-calendar.svg";
 import appointmentInsuranceIcon from "./assets/appointment-insurance.svg";
 import appointmentLanguageIcon from "./assets/appointment-language.svg";
+import doctorImage1 from "./assets/doctors/doctor_1.jpg";
+import doctorImage2 from "./assets/doctors/doctor_2.jpg";
+import doctorImage3 from "./assets/doctors/doctor_3.jpg";
+import doctorImage4 from "./assets/doctors/doctor_4.jpg";
+import doctorImage5 from "./assets/doctors/doctor_5.jpg";
+import hospitalImage1 from "./assets/hospitals/hospital_1.jpg";
+import hospitalImage2 from "./assets/hospitals/hospital_2.jpg";
+import hospitalImage3 from "./assets/hospitals/hospital_3.jpg";
+import hospitalImage5 from "./assets/hospitals/hospital_5.jpg";
+import hospitalImage6 from "./assets/hospitals/hospital_6.jpg";
+import hospitalImage8 from "./assets/hospitals/hospital_8.jpg";
+import hospitalImage9 from "./assets/hospitals/hospital_9.jpg";
 import { loadLeaflet } from "./map/leafletLoader.js";
 import { searchPlace } from "./map/nominatimSearch.js";
 import { buildPlacePin, createInfoWindowContent } from "./map/placePin.js";
@@ -26,6 +38,26 @@ const distanceOptions = [
   { label: "Within 25 miles", value: 25 },
   { label: "Within 50 miles", value: 50 }
 ];
+const hospitalImages = [
+  hospitalImage1,
+  hospitalImage2,
+  hospitalImage3,
+  hospitalImage5,
+  hospitalImage6,
+  hospitalImage8,
+  hospitalImage9
+];
+const doctorImages = [
+  doctorImage1,
+  doctorImage2,
+  doctorImage3,
+  doctorImage4,
+  doctorImage5
+];
+const hospitalImageOverrides = {
+  "seed-amara-patel": hospitalImage9,
+  "Sacramento Gender Health Center": hospitalImage9
+};
 
 export default function MapView({
   center = defaultCenter,
@@ -329,7 +361,7 @@ export default function MapView({
                   aria-label={`Show ${pin.name} on map`}
                 >
                   <div className="map-provider-card__thumb" aria-hidden="true">
-                    <span>{providerInitials(pin.name)}</span>
+                    <img src={getHospitalImage(pin)} alt="" />
                   </div>
                   <div className="map-provider-card__body">
                     <p>{pin.placeName || pin.name}</p>
@@ -476,9 +508,23 @@ export default function MapView({
 
 function formatResultLocation(value) {
   const trimmedValue = value.trim();
+  const zipCode = trimmedValue.match(/\d{5}/)?.[0];
+  const knownCityByZip = {
+    "95616": "davis",
+    "95618": "davis",
+    "95776": "woodland",
+    "95814": "sacramento",
+    "95816": "sacramento",
+    "95817": "sacramento",
+    "95825": "sacramento"
+  };
 
   if (!trimmedValue) {
     return "your area";
+  }
+
+  if (zipCode && knownCityByZip[zipCode]) {
+    return `${zipCode},${knownCityByZip[zipCode]}`;
   }
 
   return trimmedValue.toLowerCase();
@@ -692,7 +738,7 @@ function AppointmentFlow({
 function ProviderAvatar({ provider }) {
   return (
     <div className="appointment-flow__avatar" aria-hidden="true">
-      <span>{providerInitials(provider.name || "Provider")}</span>
+      <img src={getDoctorImage(provider)} alt="" />
     </div>
   );
 }
@@ -847,6 +893,27 @@ function formatSpecialtyLabel(value) {
   if (upperValue === "STI") return "STI";
 
   return titleCaseLower(normalizedValue);
+}
+
+function getHospitalImage(provider) {
+  const override = hospitalImageOverrides[provider.id] || hospitalImageOverrides[provider.placeName];
+
+  if (override) {
+    return override;
+  }
+
+  return getStableImage(provider, hospitalImages, "hospital");
+}
+
+function getDoctorImage(provider) {
+  return getStableImage(provider, doctorImages, "doctor");
+}
+
+function getStableImage(provider, images, fallbackKey) {
+  const key = String(provider.id || provider.name || provider.placeName || fallbackKey);
+  const hash = [...key].reduce((total, character) => total + character.charCodeAt(0), 0);
+
+  return images[hash % images.length];
 }
 
 function providerInitials(name) {
