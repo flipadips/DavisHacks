@@ -20,7 +20,8 @@ export default function MapView({
   const [query, setQuery] = useState("");
   const [mapStatus, setMapStatus] = useState("Loading map...");
   const [isSearching, setIsSearching] = useState(false);
-  const allPins = useMemo(() => [...externalPins, ...pins], [externalPins, pins]);
+  const providerPins = useMemo(() => externalPins.map(normalizeExternalPin).filter(Boolean), [externalPins]);
+  const allPins = useMemo(() => [...providerPins, ...pins], [providerPins, pins]);
 
   useEffect(() => {
     let isMounted = true;
@@ -151,4 +152,38 @@ export default function MapView({
       )}
     </section>
   );
+}
+
+function normalizeExternalPin(pin) {
+  const position = getPinPosition(pin);
+
+  if (!position) {
+    return null;
+  }
+
+  return {
+    ...pin,
+    id: pin.id || pin.path || `${pin.name}-${position.join(",")}`,
+    label: pin.label || "Provider",
+    name: pin.name || "Provider",
+    city: pin.city || "",
+    state: pin.state || "",
+    position
+  };
+}
+
+function getPinPosition(pin) {
+  if (Array.isArray(pin.position) && pin.position.length === 2) {
+    return pin.position;
+  }
+
+  if (Number.isFinite(pin.lat) && Number.isFinite(pin.lng)) {
+    return [pin.lat, pin.lng];
+  }
+
+  if (Number.isFinite(pin._geoloc?.lat) && Number.isFinite(pin._geoloc?.lng)) {
+    return [pin._geoloc.lat, pin._geoloc.lng];
+  }
+
+  return null;
 }

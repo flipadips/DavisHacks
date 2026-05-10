@@ -26,21 +26,9 @@ export function createInfoWindowContent(pin) {
   name.textContent = pin.name;
 
   const address = document.createElement("small");
-  address.textContent = pin.address || "Custom location";
+  address.textContent = pin.address || [pin.city, pin.state].filter(Boolean).join(", ") || "Custom location";
 
   container.append(label, name, address);
-
-  if (pin.specialty) {
-    const specialty = document.createElement("small");
-    specialty.textContent = pin.specialty;
-    container.appendChild(specialty);
-  }
-
-  if (pin.phone) {
-    const phone = document.createElement("small");
-    phone.textContent = pin.phone;
-    container.appendChild(phone);
-  }
 
   if (pin.url) {
     const link = document.createElement("a");

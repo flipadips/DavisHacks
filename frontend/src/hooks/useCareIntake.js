@@ -76,14 +76,39 @@ export function useCareIntake(apiUrl) {
 }
 
 function normalizeProviderPins(providers) {
-  return providers.map((provider, index) => ({
-    id: provider.id || `provider-${index}`,
-    label: `Provider ${index + 1}`,
-    name: provider.name,
-    address: provider.address || "",
-    specialty: provider.specialty || "",
-    phone: provider.phone || "",
-    url: provider.url || "",
-    position: [provider.lat, provider.lng]
-  }));
+  return providers
+    .map((provider, index) => {
+      const position = getProviderPosition(provider);
+
+      if (!position) {
+        return null;
+      }
+
+      return {
+        id: provider.id || provider.path || `provider-${index}`,
+        label: `Provider ${index + 1}`,
+        name: provider.name,
+        city: provider.city || "",
+        state: provider.state || "",
+        url: provider.url || "",
+        position
+      };
+    })
+    .filter(Boolean);
+}
+
+function getProviderPosition(provider) {
+  if (Number.isFinite(provider.lat) && Number.isFinite(provider.lng)) {
+    return [provider.lat, provider.lng];
+  }
+
+  if (provider.position?.length === 2) {
+    return provider.position;
+  }
+
+  if (provider._geoloc?.lat && provider._geoloc?.lng) {
+    return [provider._geoloc.lat, provider._geoloc.lng];
+  }
+
+  return null;
 }
