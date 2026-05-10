@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useState } from "react";
 import GlobeVisual from "./GlobeVisual.jsx";
 import MapView from "../MapView.jsx";
 import { careTypes } from "../constants/careTypes.js";
@@ -18,6 +18,7 @@ export default function MobileOnboarding({
   careIntakeProps,
   providerPins = []
 }) {
+  const [expandedCareType, setExpandedCareType] = useState("");
   const isSplashStep = step === 0;
   const isCareTypeStep = step === 2;
   const isMapStep = step === 3;
@@ -71,6 +72,7 @@ export default function MobileOnboarding({
             >
               <span aria-hidden="true" />
             </button>
+            <OnboardingProgress step={step} />
             <button className="mobile-onboarding__skip" type="button" onClick={onSkip}>
               Skip
             </button>
@@ -82,19 +84,17 @@ export default function MobileOnboarding({
 
             <div className="mobile-onboarding__care-options" aria-label="Care type">
               {careTypes.map((type) => (
-                <button
+                <CareTypeOption
                   key={type}
-                  type="button"
-                  className={
-                    selectedCareTypes.includes(type)
-                      ? "mobile-onboarding__care-option mobile-onboarding__care-option--selected"
-                      : "mobile-onboarding__care-option"
-                  }
-                  onClick={() => onCareTypeToggle(type)}
-                  aria-pressed={selectedCareTypes.includes(type)}
-                >
-                  {type}
-                </button>
+                  type={type}
+                  isSelected={selectedCareTypes.includes(type)}
+                  isExpanded={expandedCareType === type}
+                  onSelect={() => {
+                    const isAlreadySelected = selectedCareTypes.includes(type);
+                    onCareTypeToggle(type);
+                    setExpandedCareType(isAlreadySelected ? "" : type);
+                  }}
+                />
               ))}
             </div>
           </section>
@@ -126,6 +126,7 @@ export default function MobileOnboarding({
             >
               <span aria-hidden="true" />
             </button>
+            <OnboardingProgress step={step} />
             <button className="mobile-onboarding__skip" type="button" onClick={onSkip}>
               Skip
             </button>
@@ -163,6 +164,7 @@ export default function MobileOnboarding({
           >
             <span aria-hidden="true" />
           </button>
+          <OnboardingProgress step={step} />
           <button className="mobile-onboarding__skip" type="button" onClick={onSkip}>
             Skip
           </button>
@@ -190,6 +192,56 @@ export default function MobileOnboarding({
         </footer>
       </form>
     </main>
+  );
+}
+
+function CareTypeOption({ type, isSelected, isExpanded, onSelect }) {
+  return (
+    <button
+      type="button"
+      className={
+        isSelected
+          ? "mobile-onboarding__care-option mobile-onboarding__care-option--selected"
+          : "mobile-onboarding__care-option"
+      }
+      onClick={onSelect}
+      aria-pressed={isSelected}
+      aria-expanded={isExpanded}
+    >
+      <span>{type}</span>
+      <span className="mobile-onboarding__care-option-detail">
+        {careTypeDescriptions[type] || "Find affirming providers who can help with this kind of care."}
+      </span>
+    </button>
+  );
+}
+
+const careTypeDescriptions = {
+  "Gender-affirming hormone therapy (HRT)": "Providers who can discuss hormones, monitoring, refills, and ongoing gender-affirming care.",
+  "Gender-affirming surgery referrals": "Support finding clinicians who can help with referrals, letters, and surgical care navigation.",
+  "PrEP / HIV prevention & treatment": "Care for HIV prevention, PrEP access, treatment questions, and ongoing support.",
+  "STI screening & sexual health": "Testing, prevention, treatment, and affirming conversations about sexual health.",
+  "Mental health & counseling": "Therapy, counseling, and mental health support from LGBTQ+-affirming providers.",
+  "Family planning / fertility preservation": "Help with fertility options, family planning, contraception, and reproductive goals.",
+  "Legal name & gender marker support": "Providers who may support documentation, letters, or care related to identity updates.",
+  "Youth & adolescent care": "Affirming care for younger patients and families navigating support options.",
+  "General primary care (LGBTQ+-affirming)": "Everyday health care with providers who understand LGBTQ+ patient needs."
+};
+
+function OnboardingProgress({ step }) {
+  return (
+    <div className="mobile-onboarding__progress" aria-label={`Step ${Math.min(step + 1, 3)} of 3`}>
+      {[0, 1, 2].map((segment) => (
+        <span
+          key={segment}
+          className={
+            segment === Math.min(step, 2)
+              ? "mobile-onboarding__progress-segment mobile-onboarding__progress-segment--active"
+              : "mobile-onboarding__progress-segment"
+          }
+        />
+      ))}
+    </div>
   );
 }
 
