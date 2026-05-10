@@ -1,4 +1,7 @@
 import React, { useEffect, useMemo, useRef, useState } from "react";
+import appointmentCalendarIcon from "./assets/appointment-calendar.svg";
+import appointmentInsuranceIcon from "./assets/appointment-insurance.svg";
+import appointmentLanguageIcon from "./assets/appointment-language.svg";
 import { loadLeaflet } from "./map/leafletLoader.js";
 import { searchPlace } from "./map/nominatimSearch.js";
 import { buildPlacePin, createInfoWindowContent } from "./map/placePin.js";
@@ -7,6 +10,14 @@ const defaultCenter = [38.5449, -121.7405];
 const cartoVoyagerTileLayer = "https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png";
 const cartoVoyagerAttribution =
   '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/attributions">CARTO</a>';
+const appointmentDates = [
+  { id: "sun-10", day: "Sun", date: "10", fullDay: "Sunday", reviewLabel: "Sunday, May 10 2026" },
+  { id: "mon-11", day: "Mon", date: "11", fullDay: "Monday", reviewLabel: "Monday, May 11 2026" },
+  { id: "tue-12", day: "Tue", date: "12", fullDay: "Tuesday", reviewLabel: "Tuesday, May 12 2026" },
+  { id: "wed-13", day: "Wed", date: "13", fullDay: "Wednesday", reviewLabel: "Wednesday, May 13 2026" },
+  { id: "thu-14", day: "Thu", date: "14", fullDay: "Thursday", reviewLabel: "Thursday, May 14 2026" },
+  { id: "fri-15", day: "Fri", date: "15", fullDay: "Friday", reviewLabel: "Friday, May 15 2026" }
+];
 
 export default function MapView({
   center = defaultCenter,
@@ -34,6 +45,7 @@ export default function MapView({
   const [acceptingOnly, setAcceptingOnly] = useState(false);
   const [bookingProvider, setBookingProvider] = useState(null);
   const [bookingStep, setBookingStep] = useState("detail");
+  const [appointmentDateId, setAppointmentDateId] = useState("mon-11");
   const [appointmentTime, setAppointmentTime] = useState("1:00 PM");
   const [appointmentTransitionKey, setAppointmentTransitionKey] = useState(0);
   const providerPins = useMemo(() => externalPins.map(normalizeExternalPin).filter(Boolean), [externalPins]);
@@ -165,6 +177,7 @@ export default function MapView({
     event.stopPropagation();
     setBookingProvider(pin);
     setBookingStep("detail");
+    setAppointmentDateId("mon-11");
     setAppointmentTime("1:00 PM");
     setAppointmentTransitionKey((currentValue) => currentValue + 1);
   }
@@ -172,6 +185,7 @@ export default function MapView({
   function closeBookingFlow() {
     setBookingProvider(null);
     setBookingStep("detail");
+    setAppointmentDateId("mon-11");
     setAppointmentTime("1:00 PM");
   }
 
@@ -375,6 +389,7 @@ export default function MapView({
           key={`${bookingStep}-${appointmentTransitionKey}`}
           provider={bookingProvider}
           step={bookingStep}
+          appointmentDateId={appointmentDateId}
           appointmentTime={appointmentTime}
           onBack={() => {
             if (bookingStep === "detail") {
@@ -389,6 +404,7 @@ export default function MapView({
           }}
           onClose={closeBookingFlow}
           onConfirmAvailability={() => goToAppointmentStep("time")}
+          onSelectDate={(dateId) => setAppointmentDateId((currentValue) => (currentValue === dateId ? "" : dateId))}
           onSelectTime={setAppointmentTime}
           onConfirmTime={() => goToAppointmentStep("review")}
           onConfirmAppointment={() => goToAppointmentStep("booked")}
@@ -411,15 +427,18 @@ function formatResultLocation(value) {
 function AppointmentFlow({
   provider,
   step,
+  appointmentDateId,
   appointmentTime,
   onBack,
   onClose,
   onConfirmAvailability,
+  onSelectDate,
   onSelectTime,
   onConfirmTime,
   onConfirmAppointment
 }) {
-  const appointmentDate = "Monday, May 11 2026";
+  const selectedDate = appointmentDates.find((date) => date.id === appointmentDateId);
+  const appointmentDate = selectedDate?.reviewLabel || "No date selected";
   const displayName = provider.name || "Physician";
   const pronouns = provider.pronouns || "she/her";
   const languages = provider.languages?.length ? provider.languages.join(", ") : "English";
@@ -437,7 +456,10 @@ function AppointmentFlow({
         </div>
         <div className="appointment-flow__booked-actions">
           <button type="button" onClick={onClose}>Continue</button>
-          <button type="button" className="appointment-flow__calendar">Add to Calendar</button>
+          <button type="button" className="appointment-flow__calendar">
+            <span className="appointment-flow__calendar-icon" aria-hidden="true" />
+            Add to Calendar
+          </button>
         </div>
       </section>
     );
@@ -457,8 +479,19 @@ function AppointmentFlow({
             <p>{provider.specialty ? titleCaseLower(provider.specialty) : "Doctor"}</p>
           </div>
           <div className="appointment-flow__facts">
-            <p><span aria-hidden="true">▣</span> Available on Monday <small>45 min In Person Session</small></p>
-            <p><span aria-hidden="true">▣</span> Speaks {languages}</p>
+            <p>
+              <span className="appointment-flow__fact-icon" aria-hidden="true">
+                <img src={appointmentCalendarIcon} alt="" />
+              </span>
+              Available on {selectedDate?.fullDay || "your selected day"}
+              <small>45 min In Person Session</small>
+            </p>
+            <p>
+              <span className="appointment-flow__fact-icon" aria-hidden="true">
+                <img src={appointmentLanguageIcon} alt="" />
+              </span>
+              Speaks {languages}
+            </p>
           </div>
           <p className="appointment-flow__description">
             {provider.shortSummary || "I provide affirming, compassionate care and help patients find support that fits their goals."}
@@ -472,7 +505,7 @@ function AppointmentFlow({
 
       {step === "time" && (
         <>
-          <DateStrip />
+          <DateStrip selectedDateId={appointmentDateId} onSelectDate={onSelectDate} />
           <TimePicker selectedTime={appointmentTime} onSelectTime={onSelectTime} />
           <div className="appointment-flow__footer">
             <button type="button" onClick={onConfirmTime}>Confirm Time</button>
@@ -492,8 +525,19 @@ function AppointmentFlow({
             </div>
           </div>
           <div className="appointment-flow__review-list">
-            <p><span aria-hidden="true">▣</span> {appointmentDate}<small>{appointmentTime} In Person Session</small></p>
-            <p><span aria-hidden="true">▣</span> {insurance}</p>
+            <p>
+              <span className="appointment-flow__fact-icon" aria-hidden="true">
+                <img src={appointmentCalendarIcon} alt="" />
+              </span>
+              {appointmentDate}
+              <small>{appointmentTime} In Person Session</small>
+            </p>
+            <p>
+              <span className="appointment-flow__fact-icon" aria-hidden="true">
+                <img src={appointmentInsuranceIcon} alt="" />
+              </span>
+              {insurance}
+            </p>
           </div>
           <p className="appointment-flow__cancel-note">free cancellation available 48 hours in advance</p>
           <div className="appointment-flow__footer">
@@ -514,23 +558,20 @@ function ProviderAvatar({ provider }) {
   );
 }
 
-function DateStrip() {
-  const dates = [
-    ["Sun", "10"],
-    ["Mon", "11"],
-    ["Tue", "12"],
-    ["Wed", "13"],
-    ["Thu", "14"],
-    ["Fri", "15"]
-  ];
-
+function DateStrip({ selectedDateId, onSelectDate }) {
   return (
     <div className="appointment-flow__dates" aria-label="Appointment dates">
-      {dates.map(([day, date]) => (
-        <div key={day} className={day === "Mon" ? "appointment-flow__date appointment-flow__date--selected" : "appointment-flow__date"}>
+      {appointmentDates.map(({ id, day, date }) => (
+        <button
+          key={id}
+          type="button"
+          className={id === selectedDateId ? "appointment-flow__date appointment-flow__date--selected" : "appointment-flow__date"}
+          aria-pressed={id === selectedDateId}
+          onClick={() => onSelectDate(id)}
+        >
           <span>{day}</span>
           <strong>{date}</strong>
-        </div>
+        </button>
       ))}
     </div>
   );

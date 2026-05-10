@@ -94,10 +94,8 @@ async function seedProviderRows() {
     await pool.query(
       `
         INSERT INTO providers (
-          source,
           source_id,
           name,
-          clinic_name,
           short_summary,
           place_name,
           address,
@@ -115,13 +113,12 @@ async function seedProviderRows() {
           updated_at
         )
         VALUES (
-          'seed', $1, $2, $3, $4, $5, $6, $7,
-          $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, NOW()
+          $1, $2, $3, $4, $5, $6, $7, $8,
+          $9, $10, $11, $12, $13, $14, $15, $16, NOW()
         )
         ON CONFLICT (source_id)
         DO UPDATE SET
           name = EXCLUDED.name,
-          clinic_name = EXCLUDED.clinic_name,
           short_summary = EXCLUDED.short_summary,
           place_name = EXCLUDED.place_name,
           address = EXCLUDED.address,
@@ -141,7 +138,6 @@ async function seedProviderRows() {
       [
         provider.source_id,
         provider.name,
-        provider.place_name,
         provider.short_summary,
         provider.place_name,
         provider.address,

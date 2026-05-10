@@ -806,6 +806,7 @@ h1 {
   display: flex;
   align-items: center;
   gap: 10px;
+  min-width: 0;
   padding: 12px 14px;
   border: 1px solid #d9e0e8;
   border-radius: 6px;
@@ -847,6 +848,10 @@ h1 {
 .map-provider-card__body b,
 .map-provider-card__body em {
   display: none;
+}
+
+.map-provider-card__body {
+  min-width: 0;
 }
 
 .map-info-window {
@@ -1649,7 +1654,7 @@ h1 {
     gap: 12px;
     min-width: 0;
     min-height: 122px;
-    overflow: hidden;
+    overflow: visible;
     border: 0;
     border-bottom: 1px solid #ececec;
     border-radius: 0;
@@ -1665,7 +1670,8 @@ h1 {
     place-items: center;
     width: clamp(78px, 26vw, 104px);
     height: clamp(78px, 26vw, 104px);
-    min-width: 0;
+    min-width: clamp(78px, 26vw, 104px);
+    align-self: center;
     overflow: hidden;
     border-radius: 12px;
     background:
@@ -1699,17 +1705,26 @@ h1 {
     display: grid;
     min-width: 0;
     gap: 4px;
+    overflow: hidden;
     pointer-events: none;
   }
 
+  .mobile-onboarding__map-stage .map-provider-card__body > * {
+    min-width: 0;
+    max-width: 100%;
+  }
+
   .mobile-onboarding__map-stage .map-provider-card__body strong {
+    display: -webkit-box;
     overflow: hidden;
     color: #121212;
     font-size: 1.08rem;
     font-weight: 800;
     line-height: 1.18;
     text-overflow: ellipsis;
-    white-space: nowrap;
+    white-space: normal;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 2;
   }
 
   .mobile-onboarding__map-stage .map-provider-card__body p,
@@ -1723,8 +1738,12 @@ h1 {
   }
 
   .mobile-onboarding__map-stage .map-provider-card__body p {
+    display: -webkit-box;
+    overflow: hidden;
     color: #111111;
     font-size: 1rem;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 2;
   }
 
   body.appointment-flow-active .mobile-onboarding__map-searchbar {
@@ -1749,9 +1768,15 @@ h1 {
   }
 
   .mobile-onboarding__map-stage .map-provider-card__body em {
+    display: -webkit-box;
+    overflow: hidden;
     color: #28a348;
     font-size: clamp(0.82rem, 3.7vw, 0.98rem);
     font-style: normal;
+    text-overflow: ellipsis;
+    white-space: normal;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 2;
   }
 
   .mobile-onboarding__map-stage .map-provider-card__open {
@@ -1976,6 +2001,20 @@ h1 {
     font-size: 0.72rem;
   }
 
+  .appointment-flow__fact-icon {
+    display: grid;
+    place-items: center;
+    width: 24px;
+    height: 24px;
+    align-self: start;
+  }
+
+  .appointment-flow__fact-icon img {
+    display: block;
+    width: 100%;
+    max-height: 100%;
+  }
+
   .appointment-flow__description {
     max-width: 31ch;
     margin: 24px 0 80px;
@@ -2020,7 +2059,16 @@ h1 {
     display: grid;
     justify-items: center;
     gap: 12px;
+    border: 0;
+    padding: 0;
+    background: transparent;
     color: #77777d;
+    cursor: pointer;
+  }
+
+  .appointment-flow__date:focus-visible {
+    outline: 3px solid rgb(102 91 220 / 24%);
+    outline-offset: 4px;
   }
 
   .appointment-flow__date strong {
@@ -2087,61 +2135,220 @@ h1 {
     font-size: 0.78rem;
   }
 
-  .appointment-flow--booked {
+  .mobile-onboarding__map-stage .appointment-flow--booked {
     place-items: center;
     align-content: center;
+    gap: 22px;
+    padding-right: 18px;
+    padding-bottom: calc(196px + env(safe-area-inset-bottom));
+    padding-left: 18px;
+    overflow: hidden;
     background: #665bdc;
     color: #ffffff;
     text-align: center;
+    animation: appointment-booked-pan-in 520ms cubic-bezier(0.18, 0.86, 0.24, 1) both;
+  }
+
+  @keyframes appointment-booked-pan-in {
+    0% {
+      opacity: 0;
+      transform: translateX(88px) scale(0.98);
+    }
+
+    68% {
+      opacity: 1;
+      transform: translateX(-8px) scale(1.01);
+    }
+
+    100% {
+      opacity: 1;
+      transform: translateX(0) scale(1);
+    }
   }
 
   .appointment-flow__success {
+    position: relative;
     display: grid;
     place-items: center;
-    width: 82px;
-    height: 82px;
+    width: 122px;
+    height: 122px;
+    margin-bottom: 26px;
     border-radius: 50%;
     background: #ffffff;
+    animation: appointment-success-pop 620ms cubic-bezier(0.2, 1.18, 0.34, 1) 180ms both;
+  }
+
+  .appointment-flow__success::before,
+  .appointment-flow__success::after {
+    content: "";
+    position: absolute;
+    inset: -34px;
+    border-radius: 50%;
+    pointer-events: none;
+    opacity: 0;
+    transform: scale(0.45) rotate(0deg);
+  }
+
+  .appointment-flow__success::before {
+    background:
+      radial-gradient(circle, #ffffff 0 4px, transparent 5px) 50% 0 / 10px 10px no-repeat,
+      radial-gradient(circle, #ffffff 0 4px, transparent 5px) 100% 50% / 10px 10px no-repeat,
+      radial-gradient(circle, #ffffff 0 4px, transparent 5px) 50% 100% / 10px 10px no-repeat,
+      radial-gradient(circle, #ffffff 0 4px, transparent 5px) 0 50% / 10px 10px no-repeat;
+    animation: appointment-success-burst 720ms ease-out 300ms both;
+  }
+
+  .appointment-flow__success::after {
+    background:
+      linear-gradient(#ffffff, #ffffff) 50% 0 / 4px 18px no-repeat,
+      linear-gradient(#ffffff, #ffffff) 100% 50% / 18px 4px no-repeat,
+      linear-gradient(#ffffff, #ffffff) 50% 100% / 4px 18px no-repeat,
+      linear-gradient(#ffffff, #ffffff) 0 50% / 18px 4px no-repeat;
+    animation: appointment-success-burst 780ms ease-out 360ms both;
+  }
+
+  @keyframes appointment-success-pop {
+    0% {
+      opacity: 0;
+      transform: scale(0.58);
+    }
+
+    58% {
+      opacity: 1;
+      transform: scale(1.09);
+    }
+
+    100% {
+      opacity: 1;
+      transform: scale(1);
+    }
+  }
+
+  @keyframes appointment-success-burst {
+    0% {
+      opacity: 0;
+      transform: scale(0.35) rotate(0deg);
+    }
+
+    35% {
+      opacity: 0.9;
+    }
+
+    100% {
+      opacity: 0;
+      transform: scale(1.15) rotate(24deg);
+    }
   }
 
   .appointment-flow__success span {
-    width: 32px;
-    height: 18px;
-    border-bottom: 7px solid #665bdc;
-    border-left: 7px solid #665bdc;
+    width: 48px;
+    height: 27px;
+    border-bottom: 9px solid #665bdc;
+    border-left: 9px solid #665bdc;
+    border-radius: 4px;
     transform: rotate(-45deg) translateY(-2px);
+    animation: appointment-check-settle 420ms cubic-bezier(0.2, 1.2, 0.36, 1) 360ms both;
+  }
+
+  @keyframes appointment-check-settle {
+    0% {
+      opacity: 0;
+      transform: rotate(-45deg) translateY(8px) scale(0.72);
+    }
+
+    100% {
+      opacity: 1;
+      transform: rotate(-45deg) translateY(-2px) scale(1);
+    }
+  }
+
+  .appointment-flow__booked-copy,
+  .appointment-flow__booked-actions {
+    animation: appointment-booked-content-rise 520ms ease-out 360ms both;
+  }
+
+  @keyframes appointment-booked-content-rise {
+    from {
+      opacity: 0;
+      transform: translateY(18px);
+    }
+
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
   }
 
   .appointment-flow__booked-copy h2 {
-    margin: 0 0 10px;
+    margin: 0 0 18px;
     color: #ffffff;
-    font-size: 1.8rem;
+    font-size: clamp(2.05rem, 9vw, 2.55rem);
+    line-height: 1;
   }
 
   .appointment-flow__booked-copy p {
-    max-width: 25ch;
+    max-width: 24ch;
     margin: 0 auto;
     color: #ffffff;
-    font-size: 1.18rem;
-    line-height: 1.25;
+    font-size: clamp(1.5rem, 6.3vw, 1.8rem);
+    line-height: 1.26;
   }
 
   .appointment-flow__booked-actions {
     position: fixed;
-    right: 20px;
-    bottom: calc(34px + env(safe-area-inset-bottom));
-    left: 20px;
+    right: 10px;
+    bottom: calc(28px + env(safe-area-inset-bottom));
+    left: 10px;
     display: grid;
-    gap: 18px;
+    gap: 24px;
   }
 
   .appointment-flow__booked-actions button {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 70px;
+    border-radius: 18px;
     color: #665bdc;
     background: #ffffff;
+    font-size: 1.5rem;
+    font-weight: 500;
   }
 
   .appointment-flow__booked-actions .appointment-flow__calendar {
+    gap: 16px;
+    min-height: 36px;
     color: #ffffff;
     background: transparent;
+    font-size: 1.45rem;
+  }
+
+  .appointment-flow__calendar-icon {
+    position: relative;
+    display: inline-block;
+    width: 31px;
+    height: 31px;
+    border: 4px solid currentColor;
+    border-radius: 8px;
+    box-shadow: inset 0 9px 0 -5px currentColor;
+  }
+
+  .appointment-flow__calendar-icon::before,
+  .appointment-flow__calendar-icon::after {
+    content: "";
+    position: absolute;
+    top: -8px;
+    width: 4px;
+    height: 9px;
+    border-radius: 999px;
+    background: currentColor;
+  }
+
+  .appointment-flow__calendar-icon::before {
+    left: 5px;
+  }
+
+  .appointment-flow__calendar-icon::after {
+    right: 5px;
   }
 }
